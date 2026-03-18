@@ -2,7 +2,7 @@ spring:
   config:
     import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
   application:
-    name: front
+    name: cash
   cloud:
     consul:
       host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)

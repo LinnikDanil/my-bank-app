@@ -35,6 +35,7 @@ subprojects {
     dependencies {
         implementation platform('org.springframework.cloud:spring-cloud-dependencies:2025.1.1')
 
+        implementation 'org.springframework.boot:spring-boot-starter-webmvc'
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
         implementation 'org.springframework.boot:spring-boot-starter-log4j2'
@@ -45,6 +46,7 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok'
 
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 

@@ -30,6 +30,10 @@ services:
         echo "Seeding Consul KV..."
         curl --fail --request PUT --data-binary @/kv/gateway.yml http://consul:8500/v1/kv/config/gateway/data
         curl --fail --request PUT --data-binary @/kv/front.yml http://consul:8500/v1/kv/config/front/data
+        curl --fail --request PUT --data-binary @/kv/account.yml http://consul:8500/v1/kv/config/account/data
+        curl --fail --request PUT --data-binary @/kv/cash.yml http://consul:8500/v1/kv/config/cash/data
+        curl --fail --request PUT --data-binary @/kv/transfer.yml http://consul:8500/v1/kv/config/transfer/data
+        curl --fail --request PUT --data-binary @/kv/notification.yml http://consul:8500/v1/kv/config/notification/data
         echo "Consul KV seeded"
       '
     networks:
@@ -69,6 +73,82 @@ services:
       - .env
     ports:
       - "8080:8080"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+  account-app:
+    container_name: account-app
+    build:
+      context: ./account
+      dockerfile: Dockerfile
+    image: account-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8082:8082"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+  cash-app:
+    container_name: cash-app
+    build:
+      context: ./cash
+      dockerfile: Dockerfile
+    image: cash-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8083:8083"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+  transfer-app:
+    container_name: transfer-app
+    build:
+      context: ./transfer
+      dockerfile: Dockerfile
+    image: transfer-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8084:8084"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+  notification-app:
+    container_name: notification-app
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    image: notification-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8085:8085"
     depends_on:
       consul:
         condition: service_healthy
