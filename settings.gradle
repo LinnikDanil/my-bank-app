@@ -1,4 +1,5 @@
 rootProject.name = 'my-bank-app'
 
 include 'front'
+include 'gateway'
 include 'template'

@@ -33,14 +33,17 @@ subprojects {
     }
 
     dependencies {
-        implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+        implementation platform('org.springframework.cloud:spring-cloud-dependencies:2025.1.1')
+
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
         implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+        implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
+        implementation 'org.springframework.cloud:spring-cloud-starter-consul-config'
 
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
 
-        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
@@ -61,5 +64,3 @@ subprojects {
         shouldRunAfter tasks.test
     }
 }
-
-

@@ -1,0 +1,84 @@
+services:
+  consul:
+    image: hashicorp/consul:1.17
+    container_name: consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    volumes:
+      - consul_data:/consul/data
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - bank-network
+
+  consul-seeder:
+    image: curlimages/curl:8.8.0
+    container_name: consul-seeder
+    depends_on:
+      consul:
+        condition: service_healthy
+    volumes:
+      - ./consul-kv:/kv:ro
+    command: >
+      sh -c '
+        set -e
+        echo "Seeding Consul KV..."
+        curl --fail --request PUT --data-binary @/kv/gateway.yml http://consul:8500/v1/kv/config/gateway/data
+        curl --fail --request PUT --data-binary @/kv/front.yml http://consul:8500/v1/kv/config/front/data
+        echo "Consul KV seeded"
+      '
+    networks:
+      - bank-network
+    restart: "no"
+
+
+
+
+  gateway-app:
+    container_name: gateway-app
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    image: gateway-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+  front-app:
+    container_name: front-app
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    image: front-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+    networks:
+      - bank-network
+
+volumes:
+  consul_data:
+
+networks:
+  bank-network:
