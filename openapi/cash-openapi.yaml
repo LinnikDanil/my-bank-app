@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: Cash Service API
+  description: API сервиса пополнения и снятия средств.
+  version: 1.0.0
+
+tags:
+  - name: cash
+    description: Операции пополнения и снятия средств
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/cash/deposit:
+    post:
+      tags: [ cash ]
+      operationId: depositCash
+      summary: Пополнение счёта текущего пользователя
+      description: |
+        Пополняет счёт пользователя по `username` из JWT.
+        Требуемая роль: `ROLE_USER`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashOperationRequest'
+      responses:
+        '200':
+          description: Счёт успешно пополнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashOperationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /api/v1/cash/withdraw:
+    post:
+      tags: [ cash ]
+      operationId: withdrawCash
+      summary: Снятие средств со счёта текущего пользователя
+      description: |
+        Списывает деньги со счёта пользователя по `username` из JWT.
+        Требуемая роль: `ROLE_USER`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashOperationRequest'
+      responses:
+        '200':
+          description: Деньги успешно списаны
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashOperationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequestError:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Неавторизованный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Недостаточно прав для вызова Cash service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Аккаунт не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Бизнес-конфликт (например, недостаточно средств)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Внутренняя ошибка Cash service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailableError:
+      description: Сервис временно недоступен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    Username:
+      type: string
+      minLength: 5
+      maxLength: 64
+      pattern: '^[A-Za-z0-9._-]+$'
+      example: IvanIvanov
+
+    MoneyAmount:
+      type: number
+      minimum: 0.01
+      maximum: 1000000000
+      multipleOf: 0.01
+      example: 100.50
+
+    CashOperationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/MoneyAmount'
+
+    CashOperationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - amount
+        - balance
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        amount:
+          $ref: '#/components/schemas/MoneyAmount'
+        balance:
+          type: number
+          minimum: 0
+          maximum: 1000000000
+          multipleOf: 0.01
+          example: 2500.75
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 120
+          pattern: '^[A-Z0-9_]+$'
+          example: INSUFFICIENT_FUNDS
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+          pattern: '.*\\S.*'
+          example: Недостаточно средств на балансе
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-03-19T12:34:56Z'

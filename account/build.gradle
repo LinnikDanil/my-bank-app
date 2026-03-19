@@ -1,5 +1,102 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 version = '0.0.1'
 description = 'account'
 
 dependencies {
+
+}
+
+def notificationClientOut = layout.buildDirectory.dir("generated/notification-client")
+def accountPublicServerOut = layout.buildDirectory.dir("generated/account-public-server")
+def accountInternalServerOut = layout.buildDirectory.dir("generated/account-internal-server")
+
+tasks.register("generateAccountPublicServerOpenApi", GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$rootDir/openapi/account-public-openapi.yaml")
+    outputDir.set(accountPublicServerOut.map { it.asFile.absolutePath })
+
+    apiPackage.set("ru.practicum.account.api.publicapi")
+    modelPackage.set("ru.practicum.account.domain.publicapi")
+    invokerPackage.set("ru.practicum.account.publicapi")
+
+    configOptions.set([
+            requestMappingMode: "controller",
+            interfaceOnly     : "false",
+            delegatePattern   : "true",
+            library           : "spring-boot",
+            useSpringBoot3    : "true",
+            useJakartaEe      : "true",
+            useTags           : "true",
+            dateLibrary       : "java8",
+            openApiNullable   : "false",
+            serializableModel : "true",
+            returnSuccessCode : "true"
+    ])
+}
+
+tasks.register("generateAccountInternalServerOpenApi", GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$rootDir/openapi/account-internal-openapi.yaml")
+    outputDir.set(accountInternalServerOut.map { it.asFile.absolutePath })
+
+    apiPackage.set("ru.practicum.account.api.internalapi")
+    modelPackage.set("ru.practicum.account.domain.internalapi")
+    invokerPackage.set("ru.practicum.account.internalapi")
+
+    configOptions.set([
+            requestMappingMode: "controller",
+            interfaceOnly     : "false",
+            delegatePattern   : "true",
+            library           : "spring-boot",
+            useSpringBoot3    : "true",
+            useJakartaEe      : "true",
+            useTags           : "true",
+            dateLibrary       : "java8",
+            openApiNullable   : "false",
+            serializableModel : "true",
+            returnSuccessCode : "true"
+    ])
+
+    globalProperties.set([
+            supportingFiles: "ApiUtil.java",
+            apiDocs        : "false",
+            modelDocs      : "false",
+            apiTests       : "false",
+            modelTests     : "false"
+    ])
+}
+
+tasks.register("generateNotificationClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/notification-openapi.yaml")
+    outputDir.set(notificationClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.account.integration.notification.domain")
+    apiPackage.set("ru.practicum.account.integration.notification.api")
+    invokerPackage.set("ru.practicum.account.integration.notification.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/account-public-server/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/account-internal-server/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/notification-client/src/main/java"))
+        }
+    }
+}
+
+tasks.named("compileJava") {
+    dependsOn(
+            "generateAccountPublicServerOpenApi",
+            "generateAccountInternalServerOpenApi",
+            "generateNotificationClientOpenApi"
+    )
 }

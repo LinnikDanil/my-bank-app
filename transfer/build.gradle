@@ -1,5 +1,82 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 version = '0.0.1'
 description = 'transfer'
 
 dependencies {
+
+}
+
+def transferServerOut = layout.buildDirectory.dir("generated/transfer-server")
+def accountClientOut = layout.buildDirectory.dir("generated/account-client")
+def notificationClientOut = layout.buildDirectory.dir("generated/notification-client")
+
+tasks.register("generateTransferServerOpenApi", GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$rootDir/openapi/transfer-openapi.yaml")
+    outputDir.set(transferServerOut.map { it.asFile.absolutePath })
+
+    apiPackage.set("ru.practicum.transfer.api")
+    modelPackage.set("ru.practicum.transfer.domain")
+    invokerPackage.set("ru.practicum.transfer")
+
+    configOptions.set([
+            requestMappingMode: "controller",
+            interfaceOnly     : "false",
+            delegatePattern   : "true",
+            library           : "spring-boot",
+            useSpringBoot3    : "true",
+            useJakartaEe      : "true",
+            useTags           : "true",
+            dateLibrary       : "java8",
+            openApiNullable   : "false",
+            serializableModel : "true",
+            returnSuccessCode : "true"
+    ])
+}
+
+tasks.register("generateAccountClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/account-internal-openapi.yaml")
+    outputDir.set(accountClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.transfer.integration.account.domain")
+    apiPackage.set("ru.practicum.transfer.integration.account.api")
+    invokerPackage.set("ru.practicum.transfer.integration.account.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+tasks.register("generateNotificationClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/notification-openapi.yaml")
+    outputDir.set(notificationClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.transfer.integration.notification.domain")
+    apiPackage.set("ru.practicum.transfer.integration.notification.api")
+    invokerPackage.set("ru.practicum.transfer.integration.notification.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/transfer-server/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/account-client/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/notification-client/src/main/java"))
+        }
+    }
+}
+
+tasks.named("compileJava") {
+    dependsOn("generateTransferServerOpenApi", "generateAccountClientOpenApi", "generateNotificationClientOpenApi")
 }
