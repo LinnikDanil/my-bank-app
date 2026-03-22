@@ -1,4 +1,22 @@
 services:
+  bank-db:
+    container_name: bank-db
+    image: postgres:17.5
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./dev/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - bank-network
+
   consul:
     image: hashicorp/consul:1.17
     container_name: consul
@@ -95,6 +113,8 @@ services:
     depends_on:
       consul:
         condition: service_healthy
+      bank-db:
+        condition: service_started
       consul-seeder:
         condition: service_started
     networks:
@@ -159,6 +179,7 @@ services:
 
 volumes:
   consul_data:
+  db-data:
 
 networks:
   bank-network:
