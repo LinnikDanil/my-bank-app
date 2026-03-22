@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Запуск account" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="my-bank-app.account.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="ru.practicum.account.publicapi.OpenApiGeneratorApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

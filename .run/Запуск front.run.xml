@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Запуск front" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="my-bank-app.front.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="ru.practicum.front.FrontApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
