@@ -1,6 +1,7 @@
 package ru.practicum.account.integration.notification.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.account.domain.model.Account;
 import ru.practicum.account.integration.notification.api.NotificationInternalApi;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountNotificationServiceImpl implements AccountNotificationService {
 
     private final NotificationInternalApi notificationInternalApi;
@@ -50,6 +52,7 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
     }
 
     private void sendEvent(String recipient, NotificationEventType eventType, NotificationEventPayload payload) {
+        log.info("Отправка события в notification-service: type={}, recipient={}", eventType, recipient);
         NotificationEvent event = new NotificationEvent()
                 .eventId(UUID.randomUUID())
                 .eventType(eventType)
@@ -58,5 +61,6 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
                 .payload(payload);
 
         notificationInternalApi.sendNotificationEvent(event);
+        log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
     }
 }

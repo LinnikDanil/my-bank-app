@@ -1,6 +1,7 @@
 package ru.practicum.account.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountServiceImpl implements AccountService {
     private static final String CURRENT_USERNAME = "todo";
 
@@ -35,26 +37,33 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountResponse getCurrentAccount() {
+        log.info("Получение текущего аккаунта");
         Account account = findRequiredAccount(CURRENT_USERNAME);
+        log.info("Текущий аккаунт найден: username={}", account.getUsername());
         return accountMapper.toAccountResponse(account);
     }
 
     @Override
     public RecipientPageResponse getRecipients(Integer page, Integer size, String search) {
         validatePagination(page, size);
+        log.info("Запрошен список получателей: page={}, size={}, search={}", page, size, search);
         var pageable = PageRequest.of(page, size);
         String normalizedSearch = normalizeSearch(search);
         Page<Account> accountPage = accountRepository.findRecipients(CURRENT_USERNAME, normalizedSearch, pageable);
+        log.info("Список получателей сформирован: elements={}, totalPages={}",
+                accountPage.getNumberOfElements(), accountPage.getTotalPages());
         return accountMapper.toRecipientPageResponse(accountPage);
     }
 
     @Override
     public AccountResponse updateCurrentAccount(UpdateAccountRequest updateAccountRequest) {
         validateUpdateRequest(updateAccountRequest);
+        log.info("Обновление текущего аккаунта");
         Account account = findRequiredAccount(CURRENT_USERNAME);
         account.setFullName(updateAccountRequest.getFullName());
         account.setDateOfBirth(updateAccountRequest.getDateOfBirth());
         Account saved = accountRepository.save(account);
+        log.info("Аккаунт обновлен: username={}", saved.getUsername());
         accountNotificationService.notifyAccountUpdated(saved);
         return accountMapper.toAccountResponse(saved);
     }
@@ -63,10 +72,12 @@ public class AccountServiceImpl implements AccountService {
     public BalanceResponse deposit(String username, MoneyAmountRequest moneyAmountRequest) {
         validateUsername(username);
         validateMoneyAmountRequest(moneyAmountRequest);
+        log.info("Пополнение баланса: username={}, amount={}", username, moneyAmountRequest.getAmount());
         Account account = findRequiredAccount(username);
         BigDecimal amount = moneyAmountRequest.getAmount();
         account.setBalance(account.getBalance().add(amount));
         Account saved = accountRepository.save(account);
+        log.info("Баланс пополнен: username={}, newBalance={}", username, saved.getBalance());
         accountNotificationService.notifyCashDeposit(username, amount);
         return accountMapper.toBalanceResponse(saved);
     }
@@ -75,13 +86,17 @@ public class AccountServiceImpl implements AccountService {
     public BalanceResponse withdraw(String username, MoneyAmountRequest moneyAmountRequest) {
         validateUsername(username);
         validateMoneyAmountRequest(moneyAmountRequest);
+        log.info("Списание с баланса: username={}, amount={}", username, moneyAmountRequest.getAmount());
         Account account = findRequiredAccount(username);
         BigDecimal amount = moneyAmountRequest.getAmount();
         if (account.getBalance().compareTo(amount) < 0) {
+            log.warn("Недостаточно средств: username={}, balance={}, amount={}",
+                    username, account.getBalance(), amount);
             throw new InsufficientFundsException(username);
         }
         account.setBalance(account.getBalance().subtract(amount));
         Account saved = accountRepository.save(account);
+        log.info("Списание выполнено: username={}, newBalance={}", username, saved.getBalance());
         accountNotificationService.notifyCashWithdraw(username, amount);
         return accountMapper.toBalanceResponse(saved);
     }

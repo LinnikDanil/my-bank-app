@@ -11,7 +11,9 @@ public class NotificationRestClientConfig {
 
     @Bean
     @LoadBalanced
-    public RestClient.Builder notificationRestClientBuilder() {
-        return ApiClient.buildRestClientBuilder();
+    public RestClient.Builder notificationRestClientBuilder(
+            NotificationRestClientLoggingInterceptor loggingInterceptor) {
+        return ApiClient.buildRestClientBuilder()
+                .requestInterceptor(loggingInterceptor);
     }
 }
