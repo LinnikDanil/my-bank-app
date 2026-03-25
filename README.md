@@ -64,3 +64,16 @@ transfer:
 notification:
 
 * /internal/v1/notifications/events POST уведомление [hasAnyAuthority(ACCOUNT, CASH, TRANSFER)]
+
+realm my-bank-realm
+realm-роли: USER, ACCOUNT, CASH, TRANSFER, NOTIFICATION
+клиент для фронта (Authorization Code Flow): front (secret: front-secret)
+сервисные клиенты (Client Credentials Flow):
+account-service, cash-service, transfer-service, notification-service
+сервисным аккаунтам выданы нужные роли:
+account-service -> NOTIFICATION
+cash-service -> ACCOUNT, NOTIFICATION
+transfer-service -> ACCOUNT, NOTIFICATION
+2 тестовых пользователя для входа с фронта:
+ivan / ivan123
+petr / petr123

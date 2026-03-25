@@ -58,7 +58,22 @@ services:
       - bank-network
     restart: "no"
 
-
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   gateway-app:
@@ -90,12 +105,14 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - "8086:8086"
     depends_on:
       consul:
         condition: service_healthy
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 
@@ -117,6 +134,8 @@ services:
         condition: service_started
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 
@@ -136,6 +155,8 @@ services:
         condition: service_healthy
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 
@@ -155,6 +176,8 @@ services:
         condition: service_healthy
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 
@@ -174,6 +197,8 @@ services:
         condition: service_healthy
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 

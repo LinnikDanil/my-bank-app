@@ -1,0 +1,113 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="seed_account_ivan" author="DLinnik">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM account WHERE username = 'ivanivanov'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="account">
+            <column name="username" value="ivan"/>
+            <column name="full_name" value="Ivan Ivanov"/>
+            <column name="date_of_birth" valueDate="2001-05-10"/>
+            <column name="balance" valueNumeric="1000.00"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="account">
+                <where>username = 'ivan'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="seed_account_petr" author="DLinnik">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM account WHERE username = 'petrpetrov'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="account">
+            <column name="username" value="petr"/>
+            <column name="full_name" value="Petr Petrov"/>
+            <column name="date_of_birth" valueDate="1999-11-20"/>
+            <column name="balance" valueNumeric="1000.00"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="account">
+                <where>username = 'petr'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="seed_account_maria" author="DLinnik">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM account WHERE username = 'mariaivanova'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="account">
+            <column name="username" value="mariaivanova"/>
+            <column name="full_name" value="Мария Иванова"/>
+            <column name="date_of_birth" valueDate="1997-03-15"/>
+            <column name="balance" valueNumeric="1200.00"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="account">
+                <where>username = 'mariaivanova'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="seed_account_sergey" author="DLinnik">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM account WHERE username = 'sergeysmirnov'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="account">
+            <column name="username" value="sergeysmirnov"/>
+            <column name="full_name" value="Сергей Смирнов"/>
+            <column name="date_of_birth" valueDate="1992-08-11"/>
+            <column name="balance" valueNumeric="950.00"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="account">
+                <where>username = 'sergeysmirnov'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="seed_account_olga" author="DLinnik">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM account WHERE username = 'olgakuznetsova'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="account">
+            <column name="username" value="olgakuznetsova"/>
+            <column name="full_name" value="Ольга Кузнецова"/>
+            <column name="date_of_birth" valueDate="1995-12-02"/>
+            <column name="balance" valueNumeric="1100.00"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="account">
+                <where>username = 'olgakuznetsova'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+    
+</databaseChangeLog>
