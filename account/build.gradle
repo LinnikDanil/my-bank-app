@@ -3,10 +3,19 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 version = '0.0.1'
 description = 'account'
 
+springBoot {
+    mainClass = "ru.practicum.account.AccountApplication"
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-liquibase'
     implementation 'org.postgresql:postgresql:42.7.10'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter'
@@ -39,6 +48,10 @@ tasks.register("generateAccountPublicServerOpenApi", GenerateTask) {
             serializableModel : "true",
             returnSuccessCode : "true"
     ])
+
+    doLast {
+        delete(layout.buildDirectory.file("generated/account-public-server/src/main/java/ru/practicum/account/publicapi/OpenApiGeneratorApplication.java"))
+    }
 }
 
 tasks.register("generateAccountInternalServerOpenApi", GenerateTask) {
@@ -64,13 +77,10 @@ tasks.register("generateAccountInternalServerOpenApi", GenerateTask) {
             returnSuccessCode : "true"
     ])
 
-    globalProperties.set([
-            supportingFiles: "ApiUtil.java",
-            apiDocs        : "false",
-            modelDocs      : "false",
-            apiTests       : "false",
-            modelTests     : "false"
-    ])
+    doLast {
+        delete(layout.buildDirectory.file("generated/account-internal-server/src/main/java/ru/practicum/account/internalapi/OpenApiGeneratorApplication.java"))
+        delete(layout.buildDirectory.dir("generated/account-internal-server/src/main/java/org/openapitools/configuration"))
+    }
 }
 
 tasks.register("generateNotificationClientOpenApi", GenerateTask) {

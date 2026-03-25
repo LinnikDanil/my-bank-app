@@ -30,3 +30,7 @@ spring:
 
 server:
   port: ${SERVER_PORT}
+
+integration:
+  notification:
+    base-url: ${NOTIFICATION_BASE_URL}

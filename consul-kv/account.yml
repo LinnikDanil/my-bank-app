@@ -4,3 +4,5 @@ DATASOURCE_SCHEMA_NAME: bank_app
 SPRING_DATASOURCE_URL: jdbc:postgresql://bank-db:5432/bank?currentSchema=${DATASOURCE_SCHEMA_NAME}
 SPRING_DATASOURCE_USERNAME: postgres
 SPRING_DATASOURCE_PASSWORD: postgres
+
+NOTIFICATION_BASE_URL: http://notification
