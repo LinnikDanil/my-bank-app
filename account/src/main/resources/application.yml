@@ -27,6 +27,11 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.xml
     default-schema: ${DATASOURCE_SCHEMA_NAME}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ACCOUNT_JWT_ISSUER_URI}
 
 server:
   port: ${SERVER_PORT}

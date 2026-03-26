@@ -7,11 +7,11 @@ import ru.practicum.account.domain.publicapi.RecipientPageResponse;
 import ru.practicum.account.domain.publicapi.UpdateAccountRequest;
 
 public interface AccountService {
-    AccountResponse getCurrentAccount();
+    AccountResponse getCurrentAccount(String username);
 
-    RecipientPageResponse getRecipients(Integer page, Integer size, String search);
+    RecipientPageResponse getRecipients(String username, Integer page, Integer size, String search);
 
-    AccountResponse updateCurrentAccount(UpdateAccountRequest updateAccountRequest);
+    AccountResponse updateCurrentAccount(String username, UpdateAccountRequest updateAccountRequest);
 
     BalanceResponse deposit(String username, MoneyAmountRequest moneyAmountRequest);
 

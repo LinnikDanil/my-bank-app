@@ -29,37 +29,38 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 @Slf4j
 public class AccountServiceImpl implements AccountService {
-    private static final String CURRENT_USERNAME = "todo";
-
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final AccountNotificationService accountNotificationService;
 
     @Override
-    public AccountResponse getCurrentAccount() {
+    public AccountResponse getCurrentAccount(String username) {
+        validateUsername(username);
         log.info("Получение текущего аккаунта");
-        Account account = findRequiredAccount(CURRENT_USERNAME);
+        Account account = findRequiredAccount(username);
         log.info("Текущий аккаунт найден: username={}", account.getUsername());
         return accountMapper.toAccountResponse(account);
     }
 
     @Override
-    public RecipientPageResponse getRecipients(Integer page, Integer size, String search) {
+    public RecipientPageResponse getRecipients(String username, Integer page, Integer size, String search) {
+        validateUsername(username);
         validatePagination(page, size);
         log.info("Запрошен список получателей: page={}, size={}, search={}", page, size, search);
         var pageable = PageRequest.of(page, size);
         String normalizedSearch = normalizeSearch(search);
-        Page<Account> accountPage = accountRepository.findRecipients(CURRENT_USERNAME, normalizedSearch, pageable);
+        Page<Account> accountPage = accountRepository.findRecipients(username, normalizedSearch, pageable);
         log.info("Список получателей сформирован: elements={}, totalPages={}",
                 accountPage.getNumberOfElements(), accountPage.getTotalPages());
         return accountMapper.toRecipientPageResponse(accountPage);
     }
 
     @Override
-    public AccountResponse updateCurrentAccount(UpdateAccountRequest updateAccountRequest) {
+    public AccountResponse updateCurrentAccount(String username, UpdateAccountRequest updateAccountRequest) {
+        validateUsername(username);
         validateUpdateRequest(updateAccountRequest);
         log.info("Обновление текущего аккаунта");
-        Account account = findRequiredAccount(CURRENT_USERNAME);
+        Account account = findRequiredAccount(username);
         account.setFullName(updateAccountRequest.getFullName());
         account.setDateOfBirth(updateAccountRequest.getDateOfBirth());
         Account saved = accountRepository.save(account);
