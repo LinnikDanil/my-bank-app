@@ -64,6 +64,7 @@ subprojects {
         group = 'verification'
         useJUnitPlatform()
         testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
         include '**/*IT.class'
         systemProperty 'spring.profiles.active', 'test'
         shouldRunAfter tasks.test
