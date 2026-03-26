@@ -21,7 +21,7 @@ paths:
       summary: Получение текущего аккаунта
       description: |
         Возвращает аккаунт пользователя по `username` из JWT.
-        Требуемая роль: `ROLE_USER`.
+        Требуемая authority: `USER`.
       responses:
         '200':
           description: Данные текущего аккаунта
@@ -33,6 +33,8 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
@@ -44,7 +46,7 @@ paths:
       summary: Обновление текущего аккаунта
       description: |
         Обновляет `fullName` и `dateOfBirth` пользователя по `username` из JWT.
-        Требуемая роль: `ROLE_USER`.
+        Требуемая authority: `USER`.
       requestBody:
         required: true
         content:
@@ -64,6 +66,10 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
@@ -76,7 +82,7 @@ paths:
       summary: Получение списка получателей для перевода
       description: |
         Возвращает список пользователей (без текущего) с поиском и пагинацией.
-        Требуемая роль: `ROLE_USER`.
+        Требуемая authority: `USER`.
       parameters:
         - name: page
           in: query

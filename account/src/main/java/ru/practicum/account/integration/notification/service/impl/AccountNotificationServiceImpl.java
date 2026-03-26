@@ -60,7 +60,12 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
                 .recipients(List.of(recipient))
                 .payload(payload);
 
-        notificationInternalApi.sendNotificationEvent(event);
-        log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
+        try {
+            notificationInternalApi.sendNotificationEvent(event);
+            log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
+        } catch (Exception ex) {
+            log.error("Не удалось отправить событие в notification-service: eventId={}, type={}",
+                    event.getEventId(), eventType, ex);
+        }
     }
 }

@@ -13,7 +13,7 @@
         </preConditions>
 
         <insert tableName="account">
-            <column name="username" value="ivan"/>
+            <column name="username" value="ivanivanov"/>
             <column name="full_name" value="Ivan Ivanov"/>
             <column name="date_of_birth" valueDate="2001-05-10"/>
             <column name="balance" valueNumeric="1000.00"/>
@@ -21,7 +21,7 @@
 
         <rollback>
             <delete tableName="account">
-                <where>username = 'ivan'</where>
+                <where>username = 'ivanivanov'</where>
             </delete>
         </rollback>
     </changeSet>
@@ -34,7 +34,7 @@
         </preConditions>
 
         <insert tableName="account">
-            <column name="username" value="petr"/>
+            <column name="username" value="petrpetrov"/>
             <column name="full_name" value="Petr Petrov"/>
             <column name="date_of_birth" valueDate="1999-11-20"/>
             <column name="balance" valueNumeric="1000.00"/>
@@ -42,7 +42,7 @@
 
         <rollback>
             <delete tableName="account">
-                <where>username = 'petr'</where>
+                <where>username = 'petrpetrov'</where>
             </delete>
         </rollback>
     </changeSet>

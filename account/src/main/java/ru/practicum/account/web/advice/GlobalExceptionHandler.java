@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -45,6 +48,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Object> handleInsufficientFunds(InsufficientFundsException ex, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, "INSUFFICIENT_FUNDS", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({
+            DataIntegrityViolationException.class,
+            OptimisticLockingFailureException.class
+    })
+    public ResponseEntity<Object> handleConflict(Exception ex, HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "CONFLICT", "Concurrent update or data conflict", request);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Object> handleDatabaseError(DataAccessException ex, HttpServletRequest request) {
+        log.error("Database access error", ex);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "DB_ERROR", "Database operation failed", request);
     }
 
     @ExceptionHandler({

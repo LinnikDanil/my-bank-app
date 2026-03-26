@@ -24,11 +24,14 @@ import ru.practicum.account.service.AccountService;
 import ru.practicum.account.service.mapper.AccountMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AccountServiceImpl implements AccountService {
+    private static final int MIN_AGE_YEARS = 18;
+
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final AccountNotificationService accountNotificationService;
@@ -127,6 +130,12 @@ public class AccountServiceImpl implements AccountService {
                 || updateAccountRequest.getDateOfBirth() == null) {
             throw new InvalidUpdateAccountRequestException();
         }
+        if (updateAccountRequest.getFullName().isBlank()) {
+            throw new InvalidUpdateAccountRequestException("fullName must not be blank");
+        }
+        if (!isAdult(updateAccountRequest.getDateOfBirth())) {
+            throw new InvalidUpdateAccountRequestException("User must be at least 18 years old");
+        }
     }
 
     private void validateUsername(String username) {
@@ -142,5 +151,9 @@ public class AccountServiceImpl implements AccountService {
         if (moneyAmountRequest.getAmount() == null || moneyAmountRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException();
         }
+    }
+
+    private boolean isAdult(LocalDate dateOfBirth) {
+        return !dateOfBirth.isAfter(LocalDate.now().minusYears(MIN_AGE_YEARS));
     }
 }

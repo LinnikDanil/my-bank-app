@@ -20,25 +20,19 @@
       },
       {
         "name": "ACCOUNT",
-        "description": "Доступ к internal API Accounts",
+        "description": "Доступ для service-Accounts",
         "composite": false,
         "clientRole": false
       },
       {
         "name": "CASH",
-        "description": "Доступ к internal API Cash",
+        "description": "Доступ для service-Cash",
         "composite": false,
         "clientRole": false
       },
       {
         "name": "TRANSFER",
-        "description": "Доступ к internal API Transfer",
-        "composite": false,
-        "clientRole": false
-      },
-      {
-        "name": "NOTIFICATION",
-        "description": "Доступ к internal API Notifications",
+        "description": "Доступ для service-Transfer",
         "composite": false,
         "clientRole": false
       }
@@ -123,7 +117,7 @@
   ],
   "users": [
     {
-      "username": "ivan",
+      "username": "ivanivanov",
       "enabled": true,
       "emailVerified": true,
       "firstName": "Ivan",
@@ -144,7 +138,7 @@
       ]
     },
     {
-      "username": "petr",
+      "username": "petrpetrov",
       "enabled": true,
       "emailVerified": true,
       "firstName": "Petr",
@@ -169,7 +163,7 @@
       "enabled": true,
       "serviceAccountClientId": "account-service",
       "realmRoles": [
-        "NOTIFICATION"
+        "ACCOUNT"
       ]
     },
     {
@@ -177,8 +171,7 @@
       "enabled": true,
       "serviceAccountClientId": "cash-service",
       "realmRoles": [
-        "ACCOUNT",
-        "NOTIFICATION"
+        "CASH"
       ]
     },
     {
@@ -186,8 +179,7 @@
       "enabled": true,
       "serviceAccountClientId": "transfer-service",
       "realmRoles": [
-        "ACCOUNT",
-        "NOTIFICATION"
+        "TRANSFER"
       ]
     },
     {
