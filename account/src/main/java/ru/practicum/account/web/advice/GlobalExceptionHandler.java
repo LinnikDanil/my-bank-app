@@ -27,6 +27,12 @@ import ru.practicum.account.domain.exception.InvalidUsernameException;
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
+/**
+ * Глобальный обработчик исключений Account-сервиса.
+ *
+ * <p>Любая ошибка приводится к единому формату ErrorResponse
+ * с кодом, сообщением и timestamp.</p>
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -119,7 +125,7 @@ public class GlobalExceptionHandler {
             return "Malformed request body";
         }
         if (ex instanceof HandlerMethodValidationException hmve) {
-            return hmve.getMessage() == null ? "Validation failed" : hmve.getMessage();
+            return hmve.getMessage();
         }
         return ex.getMessage() == null ? "Bad request" : ex.getMessage();
     }

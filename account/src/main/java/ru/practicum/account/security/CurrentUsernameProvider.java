@@ -6,9 +6,19 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import ru.practicum.account.domain.exception.InvalidUsernameException;
 
+/**
+ * Извлекает username текущего пользователя из JWT в security-контексте.
+ *
+ * <p>Поддерживает стандартный claim Keycloak {@code preferred_username}
+ * и fallback на {@code username}.</p>
+ */
 @Component
 public class CurrentUsernameProvider {
 
+    /**
+     * Возвращает username из текущей аутентификации или бросает
+     * {@link InvalidUsernameException}, если JWT/claim недоступны.
+     */
     public String requireUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {

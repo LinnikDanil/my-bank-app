@@ -21,10 +21,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Конфигурация безопасности Account-сервиса как OAuth2 Resource Server.
+ *
+ * <p>Сервис принимает JWT от Keycloak, извлекает authorities из claims
+ * {@code realm_access.roles} и {@code resource_access.*.roles},
+ * а также направляет security-исключения в общий обработчик ошибок.</p>
+ */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    /**
+     * Настраивает фильтры Spring Security:
+     * аутентификация по JWT и авторизация для всех endpoint, кроме health-check.
+     */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             AuthenticationEntryPoint authenticationEntryPoint,
@@ -43,6 +54,10 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Делегирует ошибки аутентификации в {@link org.springframework.web.bind.annotation.RestControllerAdvice},
+     * чтобы вернуть единый формат ErrorResponse.
+     */
     @Bean
     AuthenticationEntryPoint authenticationEntryPoint(
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver
@@ -50,6 +65,9 @@ public class SecurityConfig {
         return (request, response, authException) -> resolver.resolveException(request, response, null, authException);
     }
 
+    /**
+     * Делегирует ошибки авторизации (403) в общий exception resolver.
+     */
     @Bean
     AccessDeniedHandler accessDeniedHandler(
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver
@@ -58,6 +76,9 @@ public class SecurityConfig {
                 resolver.resolveException(request, response, null, accessDeniedException);
     }
 
+    /**
+     * Конвертер JWT -> Authentication, где authorities берутся из ролей Keycloak.
+     */
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -65,6 +86,9 @@ public class SecurityConfig {
         return converter;
     }
 
+    /**
+     * Объединяет роли realm и client в единый набор authorities без дублей.
+     */
     private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
         Set<String> roles = new LinkedHashSet<>();
         roles.addAll(extractRealmRoles(jwt));
@@ -77,6 +101,9 @@ public class SecurityConfig {
         return authorities;
     }
 
+    /**
+     * Извлекает роли realm из claim {@code realm_access.roles}.
+     */
     private List<String> extractRealmRoles(Jwt jwt) {
         Object realmAccessObj = jwt.getClaim("realm_access");
         if (!(realmAccessObj instanceof Map<?, ?> realmAccess)) {
@@ -95,6 +122,9 @@ public class SecurityConfig {
         return roles;
     }
 
+    /**
+     * Извлекает роли клиентов из claim {@code resource_access.*.roles}.
+     */
     private List<String> extractResourceRoles(Jwt jwt) {
         Object resourceAccessObj = jwt.getClaim("resource_access");
         if (!(resourceAccessObj instanceof Map<?, ?> resourceAccess)) {

@@ -9,12 +9,19 @@ import ru.practicum.account.domain.internalapi.BalanceResponse;
 import ru.practicum.account.domain.internalapi.MoneyAmountRequest;
 import ru.practicum.account.service.AccountService;
 
+/**
+ * Реализация внутреннего API аккаунта для межсервисных операций баланса.
+ */
 @Component
 @RequiredArgsConstructor
 public class AccountInternalDelegateImpl implements AccountInternalApiDelegate {
 
     private final AccountService accountService;
 
+    /**
+     * Пополняет баланс пользователя.
+     * Вызывается сервисами, имеющими authority CASH или TRANSFER.
+     */
     @Override
     @PreAuthorize("hasAnyAuthority('CASH','TRANSFER')")
     public ResponseEntity<BalanceResponse> internalDeposit(String username, MoneyAmountRequest moneyAmountRequest) {
@@ -22,6 +29,10 @@ public class AccountInternalDelegateImpl implements AccountInternalApiDelegate {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Списывает средства с баланса пользователя.
+     * Вызывается сервисами, имеющими authority CASH или TRANSFER.
+     */
     @Override
     @PreAuthorize("hasAnyAuthority('CASH','TRANSFER')")
     public ResponseEntity<BalanceResponse> internalWithdraw(String username, MoneyAmountRequest moneyAmountRequest) {
