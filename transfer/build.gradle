@@ -3,8 +3,13 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 version = '0.0.1'
 description = 'transfer'
 
-dependencies {
+springBoot {
+    mainClass = "ru.practicum.transfer.TransferApplication"
+}
 
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
 }
 
 def transferServerOut = layout.buildDirectory.dir("generated/transfer-server")
@@ -33,6 +38,10 @@ tasks.register("generateTransferServerOpenApi", GenerateTask) {
             serializableModel : "true",
             returnSuccessCode : "true"
     ])
+
+    doLast {
+        delete(layout.buildDirectory.file("generated/transfer-server/src/main/java/ru/practicum/transfer/OpenApiGeneratorApplication.java"))
+    }
 }
 
 tasks.register("generateAccountClientOpenApi", GenerateTask) {

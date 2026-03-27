@@ -1,1 +1,6 @@
 SERVER_PORT: 8084
+
+ACCOUNT_BASE_URL: http://account
+NOTIFICATION_BASE_URL: http://notification
+
+TRANSFER_JWT_ISSUER_URI: http://keycloak:8080/realms/my-bank-realm
