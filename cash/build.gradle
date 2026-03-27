@@ -3,8 +3,13 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 version = '0.0.1'
 description = 'cash'
 
-dependencies {
+springBoot {
+    mainClass = "ru.practicum.cash.CashApplication"
+}
 
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
 }
 
 def cashServerOut = layout.buildDirectory.dir("generated/cash-server")
@@ -33,6 +38,10 @@ tasks.register("generateCashServerOpenApi", GenerateTask) {
             serializableModel : "true",
             returnSuccessCode : "true"
     ])
+
+    doLast {
+        delete(layout.buildDirectory.file("generated/cash-server/src/main/java/ru/practicum/cash/OpenApiGeneratorApplication.java"))
+    }
 }
 
 tasks.register("generateAccountClientOpenApi", GenerateTask) {

@@ -18,6 +18,17 @@ spring:
         watch:
           wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
           delay: 10000 # Интервал между итерациями watch (миллисекунды)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${CASH_JWT_ISSUER_URI}
 
 server:
   port: ${SERVER_PORT}
+
+integration:
+  account:
+    base-url: ${ACCOUNT_BASE_URL}
+  notification:
+    base-url: ${NOTIFICATION_BASE_URL}
