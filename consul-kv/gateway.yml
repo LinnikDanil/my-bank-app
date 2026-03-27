@@ -1,1 +1,2 @@
 SERVER_PORT: 8081
+GATEWAY_JWT_ISSUER_URI: http://keycloak:8080/realms/my-bank-realm
