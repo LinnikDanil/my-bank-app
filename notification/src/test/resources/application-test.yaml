@@ -1,0 +1,12 @@
+SERVER_PORT: 0
+
+NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/test
+
+spring:
+  cloud:
+    consul:
+      enabled: false
+      config:
+        enabled: false
+      discovery:
+        enabled: false

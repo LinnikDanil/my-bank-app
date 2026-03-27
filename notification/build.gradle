@@ -3,8 +3,12 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 version = '0.0.1'
 description = 'notification'
 
-dependencies {
+springBoot {
+    mainClass = "ru.practicum.notification.NotificationApplication"
+}
 
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 }
 
 def notificationServerOut = layout.buildDirectory.dir("generated/notification-server")
@@ -26,11 +30,16 @@ tasks.register("generateNotificationServerOpenApi", GenerateTask) {
             useSpringBoot3    : "true",
             useJakartaEe      : "true",
             useTags           : "true",
+            useOneOfInterfaces: "false",
             dateLibrary       : "java8",
             openApiNullable   : "false",
             serializableModel : "true",
             returnSuccessCode : "true"
     ])
+
+    doLast {
+        delete(layout.buildDirectory.file("generated/notification-server/src/main/java/ru/practicum/notification/OpenApiGeneratorApplication.java"))
+    }
 }
 
 sourceSets {
