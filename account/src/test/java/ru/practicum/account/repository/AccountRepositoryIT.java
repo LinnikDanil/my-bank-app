@@ -86,7 +86,7 @@ class AccountRepositoryIT {
         @Test
         @DisplayName("excludes current user and filters by search")
         void test1() {
-            var result = accountRepository.findRecipients(
+            var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "pet",
                     PageRequest.of(0, 10)
@@ -105,11 +105,7 @@ class AccountRepositoryIT {
         @Test
         @DisplayName("returns all except current user when search is null")
         void test2() {
-            var result = accountRepository.findRecipients(
-                    "ivanivanov",
-                    null,
-                    PageRequest.of(0, 10)
-            );
+            var result = accountRepository.findByUsernameNot("ivanivanov", PageRequest.of(0, 10));
 
             assertThat(result.getContent()).hasSize(3);
             assertThat(result.getContent())
@@ -121,7 +117,7 @@ class AccountRepositoryIT {
         @Test
         @DisplayName("search is case insensitive")
         void test3() {
-            var result = accountRepository.findRecipients(
+            var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "PETR",
                     PageRequest.of(0, 10)
@@ -135,11 +131,7 @@ class AccountRepositoryIT {
         @Test
         @DisplayName("applies pagination")
         void test4() {
-            var result = accountRepository.findRecipients(
-                    "ivanivanov",
-                    null,
-                    PageRequest.of(0, 2)
-            );
+            var result = accountRepository.findByUsernameNot("ivanivanov", PageRequest.of(0, 2));
 
             assertThat(result.getContent()).hasSize(2);
             assertThat(result.getTotalElements()).isEqualTo(3);
@@ -153,7 +145,7 @@ class AccountRepositoryIT {
         @Test
         @DisplayName("returns empty when no matches")
         void test5() {
-            var result = accountRepository.findRecipients(
+            var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "zzzz-no-match",
                     PageRequest.of(0, 10)

@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.transfer.domain.exception.InvalidAmountException;
 import ru.practicum.transfer.domain.exception.InvalidTransferRequestException;
 import ru.practicum.transfer.domain.exception.InvalidUsernameException;
+import ru.practicum.transfer.domain.exception.UpstreamServiceException;
 import ru.practicum.transfer.integration.account.service.TransferAccountService;
 import ru.practicum.transfer.integration.notification.service.TransferNotificationService;
 import ru.practicum.transfer.util.TestDataFactory;
@@ -95,6 +96,51 @@ class TransferServiceImplTest {
                     .isThrownBy(() -> transferService.transfer(USERNAME_FROM, request));
 
             verifyNoInteractions(transferAccountService, transferNotificationService);
+        }
+
+        @Test
+        @DisplayName("compensates when deposit to recipient fails")
+        void test6() {
+            var request = TestDataFactory.createRequest("250.00");
+            var depositFailure = new UpstreamServiceException("deposit failed");
+
+            when(transferAccountService.withdraw(USERNAME_FROM, new BigDecimal("250.00")))
+                    .thenReturn(TestDataFactory.createBalanceResponse(USERNAME_FROM, "750.00"));
+            when(transferAccountService.deposit(USERNAME_TO, new BigDecimal("250.00")))
+                    .thenThrow(depositFailure);
+            when(transferAccountService.deposit(USERNAME_FROM, new BigDecimal("250.00")))
+                    .thenReturn(TestDataFactory.createBalanceResponse(USERNAME_FROM, "1000.00"));
+
+            assertThatExceptionOfType(UpstreamServiceException.class)
+                    .isThrownBy(() -> transferService.transfer(USERNAME_FROM, request))
+                    .isEqualTo(depositFailure);
+
+            verify(transferAccountService, times(1)).withdraw(USERNAME_FROM, new BigDecimal("250.00"));
+            verify(transferAccountService, times(1)).deposit(USERNAME_TO, new BigDecimal("250.00"));
+            verify(transferAccountService, times(1)).deposit(USERNAME_FROM, new BigDecimal("250.00"));
+            verifyNoInteractions(transferNotificationService);
+        }
+
+        @Test
+        @DisplayName("returns service unavailable when compensation also fails")
+        void test7() {
+            var request = TestDataFactory.createRequest("250.00");
+
+            when(transferAccountService.withdraw(USERNAME_FROM, new BigDecimal("250.00")))
+                    .thenReturn(TestDataFactory.createBalanceResponse(USERNAME_FROM, "750.00"));
+            when(transferAccountService.deposit(USERNAME_TO, new BigDecimal("250.00")))
+                    .thenThrow(new UpstreamServiceException("deposit failed"));
+            when(transferAccountService.deposit(USERNAME_FROM, new BigDecimal("250.00")))
+                    .thenThrow(new UpstreamServiceException("refund failed"));
+
+            assertThatExceptionOfType(UpstreamServiceException.class)
+                    .isThrownBy(() -> transferService.transfer(USERNAME_FROM, request))
+                    .withMessage("Transfer failed and compensation failed. Manual intervention required.");
+
+            verify(transferAccountService, times(1)).withdraw(USERNAME_FROM, new BigDecimal("250.00"));
+            verify(transferAccountService, times(1)).deposit(USERNAME_TO, new BigDecimal("250.00"));
+            verify(transferAccountService, times(1)).deposit(USERNAME_FROM, new BigDecimal("250.00"));
+            verifyNoInteractions(transferNotificationService);
         }
     }
 }

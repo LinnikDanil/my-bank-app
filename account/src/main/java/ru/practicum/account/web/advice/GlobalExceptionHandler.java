@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Object> handleInsufficientFunds(InsufficientFundsException ex, HttpServletRequest request) {
-        return error(HttpStatus.CONFLICT, "INSUFFICIENT_FUNDS", ex.getMessage(), request);
+        return error(HttpStatus.CONFLICT, "INSUFFICIENT_FUNDS", "Недостаточно средств на счёте", request);
     }
 
     @ExceptionHandler({

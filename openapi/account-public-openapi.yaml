@@ -109,9 +109,7 @@ paths:
           description: Поиск по username/fullName
           schema:
             type: string
-            minLength: 1
             maxLength: 100
-            pattern: '.*\\S.*'
       responses:
         '200':
           description: Страница получателей
@@ -241,11 +239,12 @@ components:
       type: object
       additionalProperties: false
       required:
-        - fullName
         - dateOfBirth
       properties:
         fullName:
-          $ref: '#/components/schemas/FullName'
+          type: string
+          maxLength: 100
+          example: Иван Иванов
         dateOfBirth:
           type: string
           format: date

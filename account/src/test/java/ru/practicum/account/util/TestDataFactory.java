@@ -31,11 +31,15 @@ public final class TestDataFactory {
     }
 
     public static UpdateAccountRequest createAdultUpdateRequest() {
-        return new UpdateAccountRequest("Ivan Sidorov", LocalDate.now().minusYears(20));
+        return new UpdateAccountRequest()
+                .fullName("Ivan Sidorov")
+                .dateOfBirth(LocalDate.now().minusYears(20));
     }
 
     public static UpdateAccountRequest createMinorUpdateRequest() {
-        return new UpdateAccountRequest("Ivan Sidorov", LocalDate.now().minusYears(17));
+        return new UpdateAccountRequest()
+                .fullName("Ivan Sidorov")
+                .dateOfBirth(LocalDate.now().minusYears(17));
     }
 
     public static MoneyAmountRequest createMoneyAmountRequest(String amount) {

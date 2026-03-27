@@ -33,11 +33,34 @@ public class TransferServiceImpl implements TransferService {
         log.info("Выполнение перевода: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
 
         transferAccountService.withdraw(usernameFrom, amount);
-        transferAccountService.deposit(usernameTo, amount);
+        try {
+            transferAccountService.deposit(usernameTo, amount);
+        } catch (RuntimeException depositException) {
+            compensateTransfer(usernameFrom, usernameTo, amount, depositException);
+            throw depositException;
+        }
         transferNotificationService.notifyTransferCompleted(usernameFrom, usernameTo, amount);
 
         log.info("Перевод выполнен: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
         return new TransferResponse(usernameFrom, usernameTo, amount);
+    }
+
+    private void compensateTransfer(String usernameFrom,
+                                    String usernameTo,
+                                    BigDecimal amount,
+                                    RuntimeException depositException) {
+        log.warn("Не удалось зачислить перевод получателю, запускаем компенсацию: usernameFrom={}, usernameTo={}, amount={}",
+                usernameFrom, usernameTo, amount, depositException);
+        try {
+            transferAccountService.deposit(usernameFrom, amount);
+            log.info("Компенсация перевода выполнена: usernameFrom={}, amount={}", usernameFrom, amount);
+        } catch (RuntimeException compensationException) {
+            log.error("Компенсация перевода не удалась: usernameFrom={}, usernameTo={}, amount={}",
+                    usernameFrom, usernameTo, amount, compensationException);
+            throw new ru.practicum.transfer.domain.exception.UpstreamServiceException(
+                    "Transfer failed and compensation failed. Manual intervention required."
+            );
+        }
     }
 
     private void validateUsername(String username) {

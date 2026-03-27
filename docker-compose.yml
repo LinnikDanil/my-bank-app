@@ -64,6 +64,9 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
@@ -94,6 +97,8 @@ services:
         condition: service_healthy
       consul-seeder:
         condition: service_started
+      keycloak:
+        condition: service_healthy
     networks:
       - bank-network
 
@@ -127,8 +132,6 @@ services:
     restart: on-failure
     env_file:
       - .env
-    environment:
-      ACCOUNT_JWT_ISSUER_URI: http://keycloak:8080/realms/my-bank-realm
     ports:
       - "8082:8082"
     depends_on:

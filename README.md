@@ -1,79 +1,268 @@
-Задачи:
+# My Bank App
 
-1) Реализовать Spring Cloud Gateway
-2) Реализовать Service Discovery Consul
-3) Реализовать Externalized в Consul
-4) Добавить keycloak и realm-export к нему
-5) Миркосервис фронт: Добавить openApi
-6) микросервис аккаунтов (Accounts) OpenApi Spec
-7) микросервис обналичивания денег (Cash) OpenApi Spec
-8) микросервис перевода денег на счёт другого аккаунта (Transfer) OpenApi Spec
-9) микросервис уведомлений (Notifications) OpenApi Spec
-10) убрать template из setting.gradle
+Микросервисное приложение «Банк» для проектной работы 9 спринта.
 
-front:
-авторизируется по Authorization Code Flow и ходит во все сервисы, кроме уведомлений
+Проект реализует:
+- фронт с одной HTML-страницей (`front`),
+- Gateway API (`gateway`),
+- сервис аккаунтов (`account`),
+- сервис внесения/снятия средств (`cash`),
+- сервис переводов (`transfer`),
+- сервис уведомлений (`notification`),
+- OAuth 2.0 авторизацию через Keycloak,
+- Service Discovery + Externalized Config через Consul,
+- запуск всех компонентов через Docker Compose.
 
-account:
-таблица user:
+## 1. Архитектура
 
-* username [IvanIvanon]
-* fullName [Иван Иванов]
-* date_of_birth [10.05.2001]
-* money_amount [10.11]
+### 1.1. Сервисы
 
-Микросервис Accounts авторизуется на OAuth 2.0 по Client Credentials Flow и ходит в notification
+| Модуль | Назначение | Порт |
+|---|---|---:|
+| `front` | UI (Thymeleaf), OAuth2 Login (Authorization Code Flow), запросы в Gateway | `8086` |
+| `gateway` | Маршрутизация запросов в микросервисы, проброс JWT (`TokenRelay`) | `8081` |
+| `account` | Данные аккаунта, баланс, список получателей | `8082` |
+| `cash` | Пополнение/снятие со счёта | `8083` |
+| `transfer` | Переводы между пользователями | `8084` |
+| `notification` | Обработка событий уведомлений | `8085` |
+| `keycloak` | OAuth 2.0 / OIDC сервер авторизации | `8080` |
+| `consul` | Service Discovery + Config KV | `8500` |
+| `bank-db` (PostgreSQL) | Персистентная БД аккаунтов | `5433 -> 5432` |
 
-Cash:
-Снятие и пополнение счета
+### 1.2. Схема взаимодействия
 
-Transfer:
-Переводы между пользователями
+```mermaid
+flowchart LR
+  User[Пользователь] --> Front[Front UI]
+  Front -->|OAuth2 Login| Keycloak[Keycloak]
+  Front -->|JWT + REST| Gateway[Gateway API]
+  Gateway --> Account[Account]
+  Gateway --> Cash[Cash]
+  Gateway --> Transfer[Transfer]
 
-История операций не была прописана в ТЗ, поэтому вынесена в логи/уведомления. При необходимости её можно добавить отдельными таблицами операций
+  Cash -->|Client Credentials + REST| Account
+  Transfer -->|Client Credentials + REST| Account
 
-Описание openApiSpec:
+  Account -->|Client Credentials + REST| Notification[Notification]
+  Cash -->|Client Credentials + REST| Notification
+  Transfer -->|Client Credentials + REST| Notification
 
-front:
+  Account --> DB[(PostgreSQL)]
+```
 
-Уже написан контроллер
+## 2. Технологии
 
-acoount:
+- Java, Spring Boot, Spring Security, Spring Cloud
+- Spring Cloud Gateway Server WebMVC
+- Spring Cloud Consul Discovery + Config
+- OAuth2/OIDC (Keycloak)
+- Spring Data JPA + Hibernate
+- Liquibase
+- PostgreSQL
+- OpenAPI Generator
+- JUnit 5, Spring Boot Test, Testcontainers (в модуле `account`)
+- Docker, Docker Compose
 
-* GET /api/v1/accounts/me Получение пользователя (username из токена) [hasRole(USER)]
+## 3. Требования и окружение
 
-* PUT /api/v1/accounts/me Редактирование (обновление) пользователя (username из токена) [hasRole(USER)]
+### 3.1. Обязательные инструменты
 
-* GET /api/v1/accounts/recipients Получение всех пользователей (без того, кто запрашивал) (возвращаемые поля: username, fullName) для переводов, сюда нужно добавить пагинацию и поиск (необязательные: page, size, search) [hasRole(USER)]
+- Docker + Docker Compose
+- JDK (см. замечание ниже)
+- Bash/Zsh
 
-* POST /internal/v1/accounts/{username}/deposit Внесение денег в account (username, сумма) [hasAnyAuthority(CASH, TRANSFER)]
+### 3.2. Версия Java
 
-* POST /internal/v1/accounts/{username}/withdraw Снятие денег с account (username, сумма) [hasAnyAuthority(CASH, TRANSFER)]
+В `build.gradle` проекта сейчас настроен toolchain `Java 25`.
 
+ТЗ требует Java 21. Для полного соответствия ТЗ:
+1. либо установить Java 25 для текущей конфигурации,
+2. либо изменить `JavaLanguageVersion.of(25)` на `JavaLanguageVersion.of(21)` и проверить сборку/тесты.
 
-cash:
+## 4. Быстрый старт (рекомендуется: Docker Compose)
 
-* POST /api/v1/cash/deposit Внесение денег в account (username из токена, amount) [hasRole(USER)]
+> В проекте используется `.env` с параметрами PostgreSQL и Consul.
 
-* POST /api/v1/cash/withdraw Снятие денег с account (username из токена, amount) [hasRole(USER)]
+### 4.1. Сборка jar-файлов
 
-transfer:
+Из корня проекта:
 
-* POST /api/v1/transfers Перевод пользователю (username из токена, usernameTo, amount) [hasRole(USER)]
+```bash
+bash ./gradlew clean build
+```
 
-notification:
+### 4.2. Запуск всех сервисов
 
-* /internal/v1/notifications/events POST уведомление [hasAnyAuthority(ACCOUNT, CASH, TRANSFER)]
+```bash
+docker compose up -d --build
+```
 
-realm my-bank-realm
-realm-роли: USER, ACCOUNT, CASH, TRANSFER, NOTIFICATION
-клиент для фронта (Authorization Code Flow): front (secret: front-secret)
-сервисные клиенты (Client Credentials Flow):
-account-service, cash-service, transfer-service, notification-service
-сервисным аккаунтам выданы нужные роли:
-account-service -> NOTIFICATION
-cash-service -> ACCOUNT, NOTIFICATION
-transfer-service -> ACCOUNT, NOTIFICATION
-2 тестовых пользователя для входа с фронта:
-ivan / ivan123
-petr / petr123
+### 4.3. Проверка статуса
+
+```bash
+docker ps
+```
+
+Открыть:
+- Front UI: [http://localhost:8086](http://localhost:8086)
+- Keycloak: [http://localhost:8080](http://localhost:8080)
+- Consul UI: [http://localhost:8500](http://localhost:8500)
+
+### 4.4. Остановка
+
+```bash
+docker compose down
+```
+
+С удалением volume БД/Consul:
+
+```bash
+docker compose down -v
+```
+
+## 5. Локальный запуск сервисов (без контейнеров приложений)
+
+Вариант для разработки: инфраструктура в Docker, сервисы через Gradle.
+
+### 5.1. Поднять инфраструктуру
+
+```bash
+docker compose up -d bank-db consul consul-seeder keycloak
+```
+
+### 5.2. Запуск сервисов по одному
+
+```bash
+bash ./gradlew :gateway:bootRun
+bash ./gradlew :front:bootRun
+bash ./gradlew :account:bootRun
+bash ./gradlew :cash:bootRun
+bash ./gradlew :transfer:bootRun
+bash ./gradlew :notification:bootRun
+```
+
+Примечание: сервисы читают конфигурацию из Consul (`config/<service>/data`).
+
+## 6. Учётные данные для тестирования
+
+### 6.1. Keycloak
+
+- админ-консоль: `admin / admin`
+- realm: `my-bank-realm`
+
+### 6.2. Пользователи
+
+Из realm-импорта преднастроены:
+- `ivanivanov / ivan123`
+- `petrpetrov / petr123`
+
+### 6.3. Аккаунты в БД (Liquibase seed)
+
+`account`-сервис заполняет таблицу `account` начальными данными:
+- `ivanivanov` (Ivan Ivanov)
+- `petrpetrov` (Petr Petrov)
+- `mariaivanova` (Мария Иванова)
+- `sergeysmirnov` (Сергей Смирнов)
+- `olgakuznetsova` (Ольга Кузнецова)
+
+## 7. Пользовательские сценарии
+
+После входа в `front` доступны:
+
+1. Редактирование профиля
+- Изменение ФИО и даты рождения.
+- Бизнес-валидация возраста: 18+.
+
+2. Операции со счётом
+- Пополнение.
+- Снятие (с проверкой на недостаточность средств).
+
+3. Переводы
+- Выбор получателя.
+- Перевод суммы другому пользователю.
+
+4. Выход
+- Кнопка выхода завершает локальную сессию и OIDC-сессию в Keycloak.
+
+## 8. API и OpenAPI
+
+OpenAPI-спецификации лежат в директории [`openapi`](./openapi):
+- `account-public-openapi.yaml`
+- `account-internal-openapi.yaml`
+- `cash-openapi.yaml`
+- `transfer-openapi.yaml`
+- `notification-openapi.yaml`
+
+Генерация серверных/клиентских интерфейсов выполняется в Gradle-задачах модулей и автоматически привязана к `compileJava`.
+
+## 9. Тестирование
+
+### 9.1. Все модульные тесты
+
+```bash
+bash ./gradlew test
+```
+
+### 9.2. Интеграционные тесты (`*IT`)
+
+```bash
+bash ./gradlew integrationTest
+```
+
+### 9.3. По модулю
+
+```bash
+bash ./gradlew :account:test
+bash ./gradlew :cash:test
+bash ./gradlew :transfer:test
+bash ./gradlew :notification:test
+bash ./gradlew :front:test
+```
+
+## 10. Docker-образы и упаковка
+
+Каждый сервис собирается в Executable JAR и упаковывается в отдельный Docker-образ (`Single Service per Host`):
+- `front/Dockerfile`
+- `gateway/Dockerfile`
+- `account/Dockerfile`
+- `cash/Dockerfile`
+- `transfer/Dockerfile`
+- `notification/Dockerfile`
+
+Базовый образ: `amazoncorretto:25-alpine-jdk`.
+
+## 11. Конфигурация и секреты
+
+### 11.1. Локальные переменные окружения
+
+Файл `.env`:
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `CONSUL_HOST`
+- `CONSUL_PORT`
+
+### 11.2. Consul KV
+
+Файлы конфигурации для сервисов находятся в [`consul-kv`](./consul-kv):
+- `front.yml`, `gateway.yml`, `account.yml`, `cash.yml`, `transfer.yml`, `notification.yml`
+
+`consul-seeder` в `docker-compose.yml` загружает их в KV при старте.
+
+## 12. Структура проекта
+
+```text
+my-bank-app/
+├── account/
+├── cash/
+├── front/
+├── gateway/
+├── notification/
+├── transfer/
+├── openapi/
+├── consul-kv/
+├── docker/
+├── docker-compose.yml
+├── build.gradle
+└── settings.gradle
+```

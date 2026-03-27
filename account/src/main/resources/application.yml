@@ -32,6 +32,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${ACCOUNT_JWT_ISSUER_URI}
+          jwk-set-uri: ${ACCOUNT_JWT_JWK_SET_URI}
       client:
         registration:
           account-service-client:

@@ -23,6 +23,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${NOTIFICATION_JWT_ISSUER_URI}
+          jwk-set-uri: ${NOTIFICATION_JWT_JWK_SET_URI}
 
 server:
   port: ${SERVER_PORT}

@@ -8,40 +8,42 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${GATEWAY_JWT_ISSUER_URI}
+          jwk-set-uri: ${GATEWAY_JWT_JWK_SET_URI}
   cloud:
     gateway:
-      mvc:
-        routes:
-          - id: account-public-route
-            uri: lb://account
-            predicates:
-              - Path=/api/v1/accounts/**
-            filters:
-              - TokenRelay=
-          - id: cash-route
-            uri: lb://cash
-            predicates:
-              - Path=/api/v1/cash/**
-            filters:
-              - TokenRelay=
-          - id: transfer-route
-            uri: lb://transfer
-            predicates:
-              - Path=/api/v1/transfers/**
-            filters:
-              - TokenRelay=
-          - id: notification-internal-route
-            uri: lb://notification
-            predicates:
-              - Path=/internal/v1/notifications/**
-            filters:
-              - TokenRelay=
-          - id: account-internal-route
-            uri: lb://account
-            predicates:
-              - Path=/internal/v1/accounts/**
-            filters:
-              - TokenRelay=
+      server:
+        webmvc:
+          routes:
+            - id: account-public-route
+              uri: lb://account
+              predicates:
+                - Path=/api/v1/accounts/**
+              filters:
+                - TokenRelay
+            - id: cash-route
+              uri: lb://cash
+              predicates:
+                - Path=/api/v1/cash/**
+              filters:
+                - TokenRelay
+            - id: transfer-route
+              uri: lb://transfer
+              predicates:
+                - Path=/api/v1/transfers/**
+              filters:
+                - TokenRelay
+            - id: notification-internal-route
+              uri: lb://notification
+              predicates:
+                - Path=/internal/v1/notifications/**
+              filters:
+                - TokenRelay
+            - id: account-internal-route
+              uri: lb://account
+              predicates:
+                - Path=/internal/v1/accounts/**
+              filters:
+                - TokenRelay
     consul:
       host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
       port: ${CONSUL_PORT:8500}

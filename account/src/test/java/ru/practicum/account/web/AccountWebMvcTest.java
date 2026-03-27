@@ -134,7 +134,6 @@ class AccountWebMvcTest {
         @Test
         @DisplayName("update current account")
         void test4() throws Exception {
-            var request = new UpdateAccountRequest("Ivan Sidorov", LocalDate.of(2000, 1, 1));
             var response = new AccountResponse(
                     USERNAME,
                     "Ivan Sidorov",
@@ -147,7 +146,7 @@ class AccountWebMvcTest {
 
             mockMvc.perform(put("/api/v1/accounts/me")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"fullName\":\"Ivan\\\\Sidorov\",\"dateOfBirth\":\"2000-01-01\"}"))
+                            .content("{\"fullName\":\"Ivan Sidorov\",\"dateOfBirth\":\"2000-01-01\"}"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.fullName").value("Ivan Sidorov"));
@@ -162,7 +161,7 @@ class AccountWebMvcTest {
 
             mockMvc.perform(put("/api/v1/accounts/me")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"dateOfBirth\":\"2001-05-10\"}"))
+                            .content("{\"fullName\":\"Ivan Sidorov\"}"))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.code").value("BAD_REQUEST"));

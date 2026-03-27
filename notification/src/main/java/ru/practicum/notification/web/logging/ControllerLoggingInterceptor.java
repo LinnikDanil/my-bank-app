@@ -14,6 +14,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -21,6 +22,8 @@ import java.util.Map;
 public class ControllerLoggingInterceptor implements HandlerInterceptor {
 
     private static final int MAX_BODY_LENGTH = 5000;
+    private static final String MASK = "***";
+    private static final Set<String> SENSITIVE_HEADERS = Set.of("authorization", "cookie", "set-cookie");
 
     private final ObjectMapper objectMapper;
 
@@ -52,7 +55,12 @@ public class ControllerLoggingInterceptor implements HandlerInterceptor {
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
-            headers.put(headerName, Collections.list(request.getHeaders(headerName)));
+            List<String> values = Collections.list(request.getHeaders(headerName));
+            if (SENSITIVE_HEADERS.contains(headerName.toLowerCase())) {
+                headers.put(headerName, List.of(MASK));
+                continue;
+            }
+            headers.put(headerName, values);
         }
         return headers;
     }

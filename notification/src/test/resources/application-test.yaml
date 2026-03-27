@@ -1,6 +1,7 @@
 SERVER_PORT: 0
 
 NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/test
+NOTIFICATION_JWT_JWK_SET_URI: http://localhost:8080/realms/test/protocol/openid-connect/certs
 
 spring:
   cloud:

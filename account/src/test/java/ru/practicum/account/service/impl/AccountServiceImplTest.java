@@ -107,13 +107,13 @@ class AccountServiceImplTest {
             var page = new PageImpl<>(recipients, PageRequest.of(0, 2), 2);
             var expected = new RecipientPageResponse(List.of(), 0, 2, 2L, 1, true);
 
-            when(accountRepository.findRecipients(USERNAME, "petr", PageRequest.of(0, 2))).thenReturn(page);
+            when(accountRepository.findRecipientsBySearch(USERNAME, "petr", PageRequest.of(0, 2))).thenReturn(page);
             when(accountMapper.toRecipientPageResponse(page)).thenReturn(expected);
 
             var result = accountService.getRecipients(USERNAME, 0, 2, "  petr  ");
 
             assertThat(result).isEqualTo(expected);
-            verify(accountRepository, times(1)).findRecipients(USERNAME, "petr", PageRequest.of(0, 2));
+            verify(accountRepository, times(1)).findRecipientsBySearch(USERNAME, "petr", PageRequest.of(0, 2));
         }
 
         @Test
@@ -122,13 +122,13 @@ class AccountServiceImplTest {
             var page = new PageImpl<Account>(List.of(), PageRequest.of(0, 20), 0);
             var expected = TestDataFactory.emptyRecipientPageResponse(0, 20);
 
-            when(accountRepository.findRecipients(USERNAME, null, PageRequest.of(0, 20))).thenReturn(page);
+            when(accountRepository.findByUsernameNot(USERNAME, PageRequest.of(0, 20))).thenReturn(page);
             when(accountMapper.toRecipientPageResponse(page)).thenReturn(expected);
 
             var result = accountService.getRecipients(USERNAME, 0, 20, "   ");
 
             assertThat(result).isEqualTo(expected);
-            verify(accountRepository, times(1)).findRecipients(USERNAME, null, PageRequest.of(0, 20));
+            verify(accountRepository, times(1)).findByUsernameNot(USERNAME, PageRequest.of(0, 20));
         }
 
         @Test
@@ -166,7 +166,7 @@ class AccountServiceImplTest {
             var saved = TestDataFactory.createAccount(USERNAME, request.getFullName(), request.getDateOfBirth(), account.getBalance());
             var expected = new AccountResponse(USERNAME, request.getFullName(), request.getDateOfBirth(), account.getBalance());
 
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(account));
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
             when(accountRepository.save(account)).thenReturn(saved);
             when(accountMapper.toAccountResponse(saved)).thenReturn(expected);
 
@@ -189,12 +189,27 @@ class AccountServiceImplTest {
         @Test
         @DisplayName("full name is blank")
         void test3() {
-            var request = new ru.practicum.account.domain.publicapi.UpdateAccountRequest("   ", LocalDate.now().minusYears(20));
+            var account = TestDataFactory.createDefaultAccount();
+            var request = new ru.practicum.account.domain.publicapi.UpdateAccountRequest()
+                    .fullName("   ")
+                    .dateOfBirth(LocalDate.now().minusYears(20));
+            var saved = TestDataFactory.createAccount(
+                    USERNAME,
+                    account.getFullName(),
+                    request.getDateOfBirth(),
+                    account.getBalance()
+            );
+            var expected = new AccountResponse(USERNAME, account.getFullName(), request.getDateOfBirth(), account.getBalance());
 
-            assertThatExceptionOfType(InvalidUpdateAccountRequestException.class)
-                    .isThrownBy(() -> accountService.updateCurrentAccount(USERNAME, request));
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
+            when(accountRepository.save(account)).thenReturn(saved);
+            when(accountMapper.toAccountResponse(saved)).thenReturn(expected);
 
-            verifyNoInteractions(accountRepository, accountMapper, accountNotificationService);
+            var result = accountService.updateCurrentAccount(USERNAME, request);
+
+            assertThat(result).isEqualTo(expected);
+            verify(accountRepository, times(1)).save(account);
+            verify(accountNotificationService, times(1)).notifyAccountUpdated(saved);
         }
 
         @Test
@@ -211,7 +226,7 @@ class AccountServiceImplTest {
         @Test
         @DisplayName("account not found")
         void test5() {
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
                     .isThrownBy(() -> accountService.updateCurrentAccount(USERNAME, TestDataFactory.createAdultUpdateRequest()));
@@ -233,7 +248,7 @@ class AccountServiceImplTest {
             var saved = TestDataFactory.createAccount(USERNAME, account.getFullName(), account.getDateOfBirth(), new BigDecimal("1250.50"));
             var expected = new ru.practicum.account.domain.internalapi.BalanceResponse(USERNAME, new BigDecimal("1250.50"));
 
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(account));
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
             when(accountRepository.save(account)).thenReturn(saved);
             when(accountMapper.toBalanceResponse(saved)).thenReturn(expected);
 
@@ -266,7 +281,7 @@ class AccountServiceImplTest {
         @Test
         @DisplayName("account not found")
         void test4() {
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
                     .isThrownBy(() -> accountService.deposit(USERNAME, TestDataFactory.createMoneyAmountRequest("10.00")));
@@ -288,7 +303,7 @@ class AccountServiceImplTest {
             var saved = TestDataFactory.createAccount(USERNAME, account.getFullName(), account.getDateOfBirth(), new BigDecimal("875.00"));
             var expected = new ru.practicum.account.domain.internalapi.BalanceResponse(USERNAME, new BigDecimal("875.00"));
 
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(account));
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
             when(accountRepository.save(account)).thenReturn(saved);
             when(accountMapper.toBalanceResponse(saved)).thenReturn(expected);
 
@@ -302,7 +317,7 @@ class AccountServiceImplTest {
         @DisplayName("insufficient funds")
         void test2() {
             var account = TestDataFactory.createDefaultAccount();
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(account));
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
 
             assertThatExceptionOfType(InsufficientFundsException.class)
                     .isThrownBy(() -> accountService.withdraw(USERNAME, TestDataFactory.createMoneyAmountRequest("5000.00")));
@@ -323,7 +338,7 @@ class AccountServiceImplTest {
         @Test
         @DisplayName("account not found")
         void test4() {
-            when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
+            when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
                     .isThrownBy(() -> accountService.withdraw(USERNAME, TestDataFactory.createMoneyAmountRequest("10.00")));

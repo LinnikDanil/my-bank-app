@@ -2,6 +2,9 @@ package ru.practicum.front.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +19,7 @@ import ru.practicum.front.integration.account.domain.RecipientPageResponse;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,7 +65,10 @@ public class MainController {
         String info = null;
         List<String> errors = null;
         try {
-            bankGatewayClient.updateCurrentAccount(name, java.time.LocalDate.parse(birthdate));
+            String resolvedName = resolveNameForUpdate(name);
+            log.info("Обновление аккаунта: submittedNameBlank={}, resolvedName='{}', birthdate='{}'",
+                    name == null || name.isBlank(), resolvedName, birthdate);
+            bankGatewayClient.updateCurrentAccount(resolvedName, java.time.LocalDate.parse(birthdate));
             info = "Данные аккаунта сохранены";
         } catch (RestClientResponseException ex) {
             log.warn("Ошибка обновления аккаунта: status={}", ex.getStatusCode().value(), ex);
@@ -145,19 +152,48 @@ public class MainController {
             String info,
             List<String> errors
     ) {
+        List<String> allErrors = errors == null ? new ArrayList<>() : new ArrayList<>(errors);
+        AccountResponse account = null;
+        RecipientPageResponse recipientsPage = emptyRecipientPage(recipientPage, recipientSize);
+
         try {
-            AccountResponse account = bankGatewayClient.getCurrentAccount();
-            RecipientPageResponse recipientsPage = bankGatewayClient.getRecipients(recipientPage, recipientSize, recipientSearch);
-            fillModel(model, account, recipientsPage, recipientSearch, selectedLogin, info, errors);
+            account = bankGatewayClient.getCurrentAccount();
         } catch (RestClientResponseException ex) {
-            log.warn("Ошибка загрузки данных главной страницы: status={}", ex.getStatusCode().value(), ex);
-            model.addAttribute("errors", List.of(bankGatewayClient.extractErrorMessage(ex)));
-            fillFallbackModel(model, recipientSearch, recipientPage, recipientSize);
+            log.warn("Ошибка загрузки данных аккаунта: status={}", ex.getStatusCode().value(), ex);
+            allErrors.add(bankGatewayClient.extractErrorMessage(ex));
         } catch (Exception ex) {
-            log.error("Неожиданная ошибка загрузки главной страницы", ex);
-            model.addAttribute("errors", List.of("Не удалось загрузить данные аккаунта"));
-            fillFallbackModel(model, recipientSearch, recipientPage, recipientSize);
+            log.error("Неожиданная ошибка загрузки данных аккаунта", ex);
+            allErrors.add("Не удалось загрузить данные аккаунта");
         }
+
+        try {
+            recipientsPage = bankGatewayClient.getRecipients(recipientPage, recipientSize, recipientSearch);
+        } catch (RestClientResponseException ex) {
+            log.warn("Ошибка загрузки списка получателей: status={}", ex.getStatusCode().value(), ex);
+            allErrors.add(bankGatewayClient.extractErrorMessage(ex));
+        } catch (Exception ex) {
+            log.error("Неожиданная ошибка загрузки списка получателей", ex);
+            allErrors.add("Не удалось загрузить список получателей");
+        }
+
+        List<String> resolvedErrors = allErrors.isEmpty() ? null : allErrors;
+        if (account == null) {
+            fillFallbackModel(model, recipientSearch, recipientPage, recipientSize);
+            model.addAttribute("errors", resolvedErrors);
+            model.addAttribute("info", info);
+            return;
+        }
+        fillModel(model, account, recipientsPage, recipientSearch, selectedLogin, info, resolvedErrors);
+    }
+
+    private RecipientPageResponse emptyRecipientPage(int recipientPage, int recipientSize) {
+        return new RecipientPageResponse()
+                .content(Collections.emptyList())
+                .page(recipientPage)
+                .size(recipientSize)
+                .totalElements(0L)
+                .totalPages(0)
+                .last(true);
     }
 
     private void fillModel(
@@ -193,7 +229,7 @@ public class MainController {
     }
 
     private void fillFallbackModel(Model model, String recipientSearch, int recipientPage, int recipientSize) {
-        model.addAttribute("name", "");
+        model.addAttribute("name", resolveDefaultName());
         model.addAttribute("birthdate", "");
         model.addAttribute("sum", "0");
         model.addAttribute("accounts", Collections.emptyList());
@@ -206,6 +242,56 @@ public class MainController {
         if (!model.containsAttribute("info")) {
             model.addAttribute("info", null);
         }
+    }
+
+    private String resolveDefaultName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return "";
+        }
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof OidcUser oidcUser)) {
+            return "";
+        }
+
+        String fullName = oidcUser.getFullName();
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+
+        String givenName = oidcUser.getGivenName();
+        String familyName = oidcUser.getFamilyName();
+        if (givenName != null && !givenName.isBlank() && familyName != null && !familyName.isBlank()) {
+            return familyName + " " + givenName;
+        }
+
+        String preferredUsername = oidcUser.getPreferredUsername();
+        if (preferredUsername != null && !preferredUsername.isBlank()) {
+            return preferredUsername;
+        }
+        return "";
+    }
+
+    private String resolveNameForUpdate(String submittedName) {
+        if (submittedName != null) {
+            String trimmedSubmittedName = submittedName.trim();
+            if (!trimmedSubmittedName.isBlank()) {
+                return trimmedSubmittedName;
+            }
+        }
+        try {
+            AccountResponse account = bankGatewayClient.getCurrentAccount();
+            String trimmedAccountName = account.getFullName().trim();
+            if (!trimmedAccountName.isBlank()) {
+                return trimmedAccountName;
+            }
+        } catch (Exception _) {
+        }
+        String identityName = resolveDefaultName();
+        if (!identityName.isBlank()) {
+            return identityName.trim();
+        }
+        return "Пользователь";
     }
 
     private int normalizePage(Integer recipientPage) {

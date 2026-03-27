@@ -23,6 +23,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${CASH_JWT_ISSUER_URI}
+          jwk-set-uri: ${CASH_JWT_JWK_SET_URI}
       client:
         registration:
           cash-service-client:

@@ -23,6 +23,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${TRANSFER_JWT_ISSUER_URI}
+          jwk-set-uri: ${TRANSFER_JWT_JWK_SET_URI}
       client:
         registration:
           transfer-service-client:

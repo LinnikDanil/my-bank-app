@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.account.domain.exception.AccountNotFoundException;
 import ru.practicum.account.domain.exception.InsufficientFundsException;
 import ru.practicum.account.domain.exception.InvalidAmountException;
@@ -37,6 +38,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountNotificationService accountNotificationService;
 
     @Override
+    @Transactional(readOnly = true)
     public AccountResponse getCurrentAccount(String username) {
         validateUsername(username);
         log.info("Получение текущего аккаунта");
@@ -46,25 +48,29 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public RecipientPageResponse getRecipients(String username, Integer page, Integer size, String search) {
         validateUsername(username);
         validatePagination(page, size);
         log.info("Запрошен список получателей: page={}, size={}, search={}", page, size, search);
         var pageable = PageRequest.of(page, size);
         String normalizedSearch = normalizeSearch(search);
-        Page<Account> accountPage = accountRepository.findRecipients(username, normalizedSearch, pageable);
+        Page<Account> accountPage = normalizedSearch == null
+                ? accountRepository.findByUsernameNot(username, pageable)
+                : accountRepository.findRecipientsBySearch(username, normalizedSearch, pageable);
         log.info("Список получателей сформирован: elements={}, totalPages={}",
                 accountPage.getNumberOfElements(), accountPage.getTotalPages());
         return accountMapper.toRecipientPageResponse(accountPage);
     }
 
     @Override
+    @Transactional
     public AccountResponse updateCurrentAccount(String username, UpdateAccountRequest updateAccountRequest) {
         validateUsername(username);
         validateUpdateRequest(updateAccountRequest);
         log.info("Обновление текущего аккаунта");
-        Account account = findRequiredAccount(username);
-        account.setFullName(updateAccountRequest.getFullName());
+        Account account = findRequiredAccountForUpdate(username);
+        account.setFullName(resolveUpdatedFullName(account.getFullName(), updateAccountRequest.getFullName()));
         account.setDateOfBirth(updateAccountRequest.getDateOfBirth());
         Account saved = accountRepository.save(account);
         log.info("Аккаунт обновлен: username={}", saved.getUsername());
@@ -73,11 +79,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public BalanceResponse deposit(String username, MoneyAmountRequest moneyAmountRequest) {
         validateUsername(username);
         validateMoneyAmountRequest(moneyAmountRequest);
         log.info("Пополнение баланса: username={}, amount={}", username, moneyAmountRequest.getAmount());
-        Account account = findRequiredAccount(username);
+        Account account = findRequiredAccountForUpdate(username);
         BigDecimal amount = moneyAmountRequest.getAmount();
         account.setBalance(account.getBalance().add(amount));
         Account saved = accountRepository.save(account);
@@ -87,11 +94,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public BalanceResponse withdraw(String username, MoneyAmountRequest moneyAmountRequest) {
         validateUsername(username);
         validateMoneyAmountRequest(moneyAmountRequest);
         log.info("Списание с баланса: username={}, amount={}", username, moneyAmountRequest.getAmount());
-        Account account = findRequiredAccount(username);
+        Account account = findRequiredAccountForUpdate(username);
         BigDecimal amount = moneyAmountRequest.getAmount();
         if (account.getBalance().compareTo(amount) < 0) {
             log.warn("Недостаточно средств: username={}, balance={}, amount={}",
@@ -107,6 +115,11 @@ public class AccountServiceImpl implements AccountService {
 
     private Account findRequiredAccount(String username) {
         return accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AccountNotFoundException(username));
+    }
+
+    private Account findRequiredAccountForUpdate(String username) {
+        return accountRepository.findByUsernameForUpdate(username)
                 .orElseThrow(() -> new AccountNotFoundException(username));
     }
 
@@ -126,16 +139,20 @@ public class AccountServiceImpl implements AccountService {
 
     private void validateUpdateRequest(UpdateAccountRequest updateAccountRequest) {
         if (updateAccountRequest == null
-                || updateAccountRequest.getFullName() == null
                 || updateAccountRequest.getDateOfBirth() == null) {
             throw new InvalidUpdateAccountRequestException();
-        }
-        if (updateAccountRequest.getFullName().isBlank()) {
-            throw new InvalidUpdateAccountRequestException("fullName must not be blank");
         }
         if (!isAdult(updateAccountRequest.getDateOfBirth())) {
             throw new InvalidUpdateAccountRequestException("User must be at least 18 years old");
         }
+    }
+
+    private String resolveUpdatedFullName(String currentFullName, String requestedFullName) {
+        if (requestedFullName == null) {
+            return currentFullName;
+        }
+        String trimmed = requestedFullName.trim();
+        return trimmed.isBlank() ? currentFullName : trimmed;
     }
 
     private void validateUsername(String username) {
