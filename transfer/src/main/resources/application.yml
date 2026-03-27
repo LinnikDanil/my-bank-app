@@ -23,11 +23,23 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${TRANSFER_JWT_ISSUER_URI}
+      client:
+        registration:
+          transfer-service-client:
+            provider: keycloak
+            authorization-grant-type: client_credentials
+            client-id: ${TRANSFER_CLIENT_ID}
+            client-secret: ${TRANSFER_CLIENT_SECRET}
+        provider:
+          keycloak:
+            token-uri: ${TRANSFER_OAUTH2_TOKEN_URI}
 
 server:
   port: ${SERVER_PORT}
 
 integration:
+  oauth2:
+    registration-id: ${TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID}
   account:
     base-url: ${ACCOUNT_BASE_URL}
   notification:

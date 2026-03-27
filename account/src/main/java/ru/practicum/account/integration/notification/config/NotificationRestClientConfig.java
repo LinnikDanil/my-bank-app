@@ -19,8 +19,10 @@ public class NotificationRestClientConfig {
     @Bean
     @LoadBalanced
     public RestClient.Builder notificationRestClientBuilder(
+            OAuth2ClientCredentialsInterceptor oAuth2ClientCredentialsInterceptor,
             NotificationRestClientLoggingInterceptor loggingInterceptor) {
         return ApiClient.buildRestClientBuilder()
+                .requestInterceptor(oAuth2ClientCredentialsInterceptor)
                 .requestInterceptor(loggingInterceptor);
     }
 }

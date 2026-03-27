@@ -36,7 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         AccountApiController.class,
         AccountInternalApiController.class
 }, excludeAutoConfiguration = {
-        org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration.class
+        org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration.class,
+        org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration.class,
+        org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration.class
 })
 @AutoConfigureMockMvc(addFilters = false)
 @Import({

@@ -5,14 +5,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 import ru.practicum.transfer.integration.account.client.ApiClient;
+import ru.practicum.transfer.integration.security.OAuth2ClientCredentialsInterceptor;
 
 @Configuration
 public class AccountRestClientConfig {
 
     @Bean
     @LoadBalanced
-    public RestClient.Builder accountRestClientBuilder(AccountRestClientLoggingInterceptor loggingInterceptor) {
+    public RestClient.Builder accountRestClientBuilder(
+            OAuth2ClientCredentialsInterceptor oAuth2ClientCredentialsInterceptor,
+            AccountRestClientLoggingInterceptor loggingInterceptor
+    ) {
         return ApiClient.buildRestClientBuilder()
+                .requestInterceptor(oAuth2ClientCredentialsInterceptor)
                 .requestInterceptor(loggingInterceptor);
     }
 }

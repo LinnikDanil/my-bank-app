@@ -23,11 +23,23 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${CASH_JWT_ISSUER_URI}
+      client:
+        registration:
+          cash-service-client:
+            provider: keycloak
+            authorization-grant-type: client_credentials
+            client-id: ${CASH_CLIENT_ID}
+            client-secret: ${CASH_CLIENT_SECRET}
+        provider:
+          keycloak:
+            token-uri: ${CASH_OAUTH2_TOKEN_URI}
 
 server:
   port: ${SERVER_PORT}
 
 integration:
+  oauth2:
+    registration-id: ${CASH_OUTBOUND_OAUTH2_REGISTRATION_ID}
   account:
     base-url: ${ACCOUNT_BASE_URL}
   notification:
