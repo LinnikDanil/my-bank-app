@@ -1,0 +1,56 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
+version = '0.0.1'
+description = 'notification'
+
+springBoot {
+    mainClass = "ru.practicum.notification.NotificationApplication"
+}
+
+dependencies {
+    implementation project(':common')
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+}
+
+def notificationServerOut = layout.buildDirectory.dir("generated/notification-server")
+
+tasks.register("generateNotificationServerOpenApi", GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$rootDir/openapi/notification-openapi.yaml")
+    outputDir.set(notificationServerOut.map { it.asFile.absolutePath })
+
+    apiPackage.set("ru.practicum.notification.api")
+    modelPackage.set("ru.practicum.notification.domain")
+    invokerPackage.set("ru.practicum.notification")
+
+    configOptions.set([
+            requestMappingMode: "controller",
+            interfaceOnly     : "false",
+            delegatePattern   : "true",
+            library           : "spring-boot",
+            useSpringBoot3    : "true",
+            useJakartaEe      : "true",
+            useTags           : "true",
+            useOneOfInterfaces: "false",
+            dateLibrary       : "java8",
+            openApiNullable   : "false",
+            serializableModel : "true",
+            returnSuccessCode : "true"
+    ])
+
+    doLast {
+        delete(layout.buildDirectory.file("generated/notification-server/src/main/java/ru/practicum/notification/OpenApiGeneratorApplication.java"))
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/notification-server/src/main/java"))
+        }
+    }
+}
+
+tasks.named("compileJava") {
+    dependsOn("generateNotificationServerOpenApi")
+}

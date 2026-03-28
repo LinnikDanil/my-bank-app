@@ -1,0 +1,63 @@
+spring:
+  config:
+    import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
+  application:
+    name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${GATEWAY_JWT_ISSUER_URI}
+          jwk-set-uri: ${GATEWAY_JWT_JWK_SET_URI}
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: account-public-route
+              uri: lb://account
+              predicates:
+                - Path=/api/v1/accounts/**
+              filters:
+                - TokenRelay
+            - id: cash-route
+              uri: lb://cash
+              predicates:
+                - Path=/api/v1/cash/**
+              filters:
+                - TokenRelay
+            - id: transfer-route
+              uri: lb://transfer
+              predicates:
+                - Path=/api/v1/transfers/**
+              filters:
+                - TokenRelay
+            - id: notification-internal-route
+              uri: lb://notification
+              predicates:
+                - Path=/internal/v1/notifications/**
+              filters:
+                - TokenRelay
+            - id: account-internal-route
+              uri: lb://account
+              predicates:
+                - Path=/internal/v1/accounts/**
+              filters:
+                - TokenRelay
+    consul:
+      host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
+      port: ${CONSUL_PORT:8500}
+      config:
+        enabled: true # Включаем чтение конфигурации из Consul KV
+        fail-fast: false # Не роняем сервис, если Consul временно недоступен при старте/чтении
+        prefixes:
+          - config # Базовый префикс KV: config/<context>/...
+        format: YAML # Значение ключа data интерпретируется как YAML
+        data-key: data # Имя leaf-ключа с полезной нагрузкой конфигурации
+        profile-separator: "," # Разделитель context и profile (пример: gateway,default)
+        watch:
+          wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
+          delay: 10000 # Интервал между итерациями watch (миллисекунды)
+
+server:
+  port: ${SERVER_PORT}

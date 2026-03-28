@@ -1,0 +1,192 @@
+{
+  "id": "my-bank-realm",
+  "realm": "my-bank-realm",
+  "displayName": "My Bank Realm",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Пользователь фронта",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "ACCOUNT",
+        "description": "Доступ для service-Accounts",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "CASH",
+        "description": "Доступ для service-Cash",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "TRANSFER",
+        "description": "Доступ для service-Transfer",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "front",
+      "name": "Front UI",
+      "description": "Authorization Code Flow для Front UI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "front-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8086/login/oauth2/code/keycloak",
+        "http://front-app:8080/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:8086"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8086/*"
+      }
+    },
+    {
+      "clientId": "account-service",
+      "name": "Account Service",
+      "description": "Client Credentials для Accounts -> Notifications",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "account-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "cash-service",
+      "name": "Cash Service",
+      "description": "Client Credentials для Cash -> Accounts, Notifications",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "cash-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "transfer-service",
+      "name": "Transfer Service",
+      "description": "Client Credentials для Transfer -> Accounts, Notifications",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "transfer-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "notification-service",
+      "name": "Notification Service",
+      "description": "Client Credentials для Notifications (если потребуется исходящий вызов)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "notification-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "ivanivanov",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ivan",
+      "lastName": "Ivanov",
+      "email": "ivan@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ivan123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER",
+        "ACCOUNT",
+        "CASH",
+        "TRANSFER"
+      ]
+    },
+    {
+      "username": "petrpetrov",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Petr",
+      "lastName": "Petrov",
+      "email": "petr@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "petr123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER",
+        "ACCOUNT",
+        "CASH",
+        "TRANSFER"
+      ]
+    },
+    {
+      "username": "service-account-account-service",
+      "enabled": true,
+      "serviceAccountClientId": "account-service",
+      "realmRoles": [
+        "ACCOUNT"
+      ]
+    },
+    {
+      "username": "service-account-cash-service",
+      "enabled": true,
+      "serviceAccountClientId": "cash-service",
+      "realmRoles": [
+        "CASH"
+      ]
+    },
+    {
+      "username": "service-account-transfer-service",
+      "enabled": true,
+      "serviceAccountClientId": "transfer-service",
+      "realmRoles": [
+        "TRANSFER"
+      ]
+    },
+    {
+      "username": "service-account-notification-service",
+      "enabled": true,
+      "serviceAccountClientId": "notification-service",
+      "realmRoles": []
+    }
+  ]
+}

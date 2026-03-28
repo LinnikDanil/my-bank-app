@@ -1,0 +1,1 @@
+CREATE SCHEMA bank_app;

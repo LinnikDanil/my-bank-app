@@ -1,0 +1,355 @@
+openapi: 3.0.3
+info:
+  title: Account Service API
+  description: API сервиса аккаунтов.
+  version: 1.0.0
+
+tags:
+  - name: account
+    description: Операции с аккаунтом пользователя
+  - name: account-internal
+    description: Внутренние операции изменения баланса
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/accounts/me:
+    get:
+      tags: [ account ]
+      operationId: getCurrentAccount
+      summary: Получение текущего аккаунта
+      description: |
+        Возвращает аккаунт пользователя по `username` из JWT.
+        Требуемая authority: `USER`.
+      responses:
+        '200':
+          description: Данные текущего аккаунта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+    put:
+      tags: [ account ]
+      operationId: updateCurrentAccount
+      summary: Обновление текущего аккаунта
+      description: |
+        Обновляет `fullName` и `dateOfBirth` пользователя по `username` из JWT.
+        Требуемая authority: `USER`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '200':
+          description: Аккаунт успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /api/v1/accounts/recipients:
+    get:
+      tags: [ account ]
+      operationId: getRecipients
+      summary: Получение списка получателей для перевода
+      description: |
+        Возвращает список пользователей (без текущего) с поиском и пагинацией.
+        Требуемая authority: `USER`.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Размер страницы
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          required: false
+          description: Поиск по username/fullName
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Страница получателей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipientPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UsernamePath:
+      name: username
+      in: path
+      required: true
+      description: Username пользователя
+      schema:
+        $ref: '#/components/schemas/Username'
+
+  responses:
+    BadRequestError:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Неавторизованный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Недостаточно прав для вызова Account service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Аккаунт не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Бизнес-конфликт (например, недостаточно средств)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Внутренняя ошибка Account service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailableError:
+      description: Сервис временно недоступен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    Username:
+      type: string
+      minLength: 5
+      maxLength: 64
+      pattern: '^[A-Za-z0-9._-]+$'
+      example: IvanIvanov
+
+    FullName:
+      type: string
+      minLength: 2
+      maxLength: 100
+      pattern: '.*\\S.*'
+      example: Иван Иванов
+
+    MoneyAmount:
+      type: number
+      minimum: 0.01
+      maximum: 1000000000
+      multipleOf: 0.01
+      example: 1000.50
+
+    AccountResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - fullName
+        - dateOfBirth
+        - balance
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        fullName:
+          $ref: '#/components/schemas/FullName'
+        dateOfBirth:
+          type: string
+          format: date
+          description: Дата рождения. На уровне бизнес-валидации возраст должен быть не менее 18 лет.
+          example: 2001-05-10
+        balance:
+          type: number
+          minimum: 0
+          maximum: 1000000000
+          multipleOf: 0.01
+          example: 101.01
+
+    UpdateAccountRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - dateOfBirth
+      properties:
+        fullName:
+          type: string
+          maxLength: 100
+          example: Иван Иванов
+        dateOfBirth:
+          type: string
+          format: date
+          description: Дата рождения. На уровне бизнес-валидации возраст должен быть не менее 18 лет.
+          example: 2001-05-10
+
+    RecipientItem:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - fullName
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        fullName:
+          $ref: '#/components/schemas/FullName'
+
+    RecipientPageResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+        - last
+      properties:
+        content:
+          type: array
+          minItems: 0
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/RecipientItem'
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 57
+        totalPages:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 3
+        last:
+          type: boolean
+          example: false
+
+    MoneyAmountRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/MoneyAmount'
+
+    BalanceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - balance
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        balance:
+          type: number
+          minimum: 0
+          maximum: 1000000000
+          multipleOf: 0.01
+          example: 2510.20
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 120
+          pattern: '^[A-Z0-9_]+$'
+          example: INSUFFICIENT_FUNDS
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+          pattern: '.*\\S.*'
+          example: Недостаточно средств на балансе
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-03-19T12:34:56Z'

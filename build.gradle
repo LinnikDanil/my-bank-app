@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '4.0.3' apply false
     id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.openapi.generator' version '7.20.0' apply false
 }
 
 version = '0.0.1-SNAPSHOT'
@@ -18,6 +19,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'org.openapi.generator'
 
     java {
         toolchain {
@@ -33,15 +35,21 @@ subprojects {
     }
 
     dependencies {
+        implementation platform('org.springframework.cloud:spring-cloud-dependencies:2025.1.1')
+
         implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
         implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+        implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
+        implementation 'org.springframework.cloud:spring-cloud-starter-consul-config'
+        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
 
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
 
-        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
@@ -56,10 +64,9 @@ subprojects {
         group = 'verification'
         useJUnitPlatform()
         testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
         include '**/*IT.class'
         systemProperty 'spring.profiles.active', 'test'
         shouldRunAfter tasks.test
     }
 }
-
-

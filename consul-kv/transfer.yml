@@ -1,0 +1,11 @@
+SERVER_PORT: 8084
+
+ACCOUNT_BASE_URL: http://account
+NOTIFICATION_BASE_URL: http://notification
+
+TRANSFER_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+TRANSFER_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+TRANSFER_CLIENT_ID: transfer-service
+TRANSFER_CLIENT_SECRET: transfer-secret
+TRANSFER_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
+TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client

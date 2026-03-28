@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Запуск cash" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="my-bank-app.cash.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="ru.practicum.cash.OpenApiGeneratorApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

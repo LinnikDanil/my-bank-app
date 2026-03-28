@@ -1,0 +1,70 @@
+spring:
+  config:
+    import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
+  application:
+    name: account
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
+      port: ${CONSUL_PORT:8500}
+      config:
+        enabled: true # Включаем чтение конфигурации из Consul KV
+        fail-fast: false # Не роняем сервис, если Consul временно недоступен при старте/чтении
+        prefixes:
+          - config # Базовый префикс KV: config/<context>/...
+        format: YAML # Значение ключа data интерпретируется как YAML
+        data-key: data # Имя leaf-ключа с полезной нагрузкой конфигурации
+        profile-separator: "," # Разделитель context и profile (пример: gateway,default)
+        watch:
+          wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
+          delay: 10000 # Интервал между итерациями watch (миллисекунды)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+    default-schema: ${DATASOURCE_SCHEMA_NAME}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ACCOUNT_JWT_ISSUER_URI}
+          jwk-set-uri: ${ACCOUNT_JWT_JWK_SET_URI}
+      client:
+        registration:
+          account-service-client:
+            provider: keycloak
+            authorization-grant-type: client_credentials
+            client-id: ${ACCOUNT_CLIENT_ID}
+            client-secret: ${ACCOUNT_CLIENT_SECRET}
+        provider:
+          keycloak:
+            token-uri: ${ACCOUNT_OAUTH2_TOKEN_URI}
+
+server:
+  port: ${SERVER_PORT}
+
+integration:
+  oauth2:
+    registration-id: ${ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID}
+  notification:
+    base-url: ${NOTIFICATION_BASE_URL}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      notificationService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+  retry:
+    instances:
+      notificationService:
+        maxAttempts: 3
+        waitDuration: 300ms

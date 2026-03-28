@@ -1,0 +1,19 @@
+SERVER_PORT: 0
+
+TRANSFER_JWT_ISSUER_URI: http://localhost:8080/realms/test
+TRANSFER_JWT_JWK_SET_URI: http://localhost:8080/realms/test/protocol/openid-connect/certs
+TRANSFER_CLIENT_ID: transfer-service
+TRANSFER_CLIENT_SECRET: test-secret
+TRANSFER_OAUTH2_TOKEN_URI: http://localhost:8080/realms/test/protocol/openid-connect/token
+TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+ACCOUNT_BASE_URL: http://localhost:9998
+NOTIFICATION_BASE_URL: http://localhost:9999
+
+spring:
+  cloud:
+    consul:
+      enabled: false
+      config:
+        enabled: false
+      discovery:
+        enabled: false

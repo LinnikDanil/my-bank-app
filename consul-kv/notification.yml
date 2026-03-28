@@ -1,0 +1,4 @@
+SERVER_PORT: 8085
+
+NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+NOTIFICATION_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs

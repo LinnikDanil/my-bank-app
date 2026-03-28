@@ -1,0 +1,217 @@
+services:
+  bank-db:
+    container_name: bank-db
+    image: postgres:17.5
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./dev/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - bank-network
+
+  consul:
+    image: hashicorp/consul:1.17
+    container_name: consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    volumes:
+      - consul_data:/consul/data
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - bank-network
+
+  consul-seeder:
+    image: curlimages/curl:8.8.0
+    container_name: consul-seeder
+    depends_on:
+      consul:
+        condition: service_healthy
+    volumes:
+      - ./consul-kv:/kv:ro
+    command: >
+      sh -c '
+        set -e
+        echo "Seeding Consul KV..."
+        curl --fail --request PUT --data-binary @/kv/gateway.yml http://consul:8500/v1/kv/config/gateway/data
+        curl --fail --request PUT --data-binary @/kv/front.yml http://consul:8500/v1/kv/config/front/data
+        curl --fail --request PUT --data-binary @/kv/account.yml http://consul:8500/v1/kv/config/account/data
+        curl --fail --request PUT --data-binary @/kv/cash.yml http://consul:8500/v1/kv/config/cash/data
+        curl --fail --request PUT --data-binary @/kv/transfer.yml http://consul:8500/v1/kv/config/transfer/data
+        curl --fail --request PUT --data-binary @/kv/notification.yml http://consul:8500/v1/kv/config/notification/data
+        echo "Consul KV seeded"
+      '
+    networks:
+      - bank-network
+    restart: "no"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bank-network
+
+
+  gateway-app:
+    container_name: gateway-app
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    image: gateway-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+  front-app:
+    container_name: front-app
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    image: front-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8086:8086"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+  account-app:
+    container_name: account-app
+    build:
+      context: ./account
+      dockerfile: Dockerfile
+    image: account-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8082:8082"
+    depends_on:
+      consul:
+        condition: service_healthy
+      bank-db:
+        condition: service_started
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+  cash-app:
+    container_name: cash-app
+    build:
+      context: ./cash
+      dockerfile: Dockerfile
+    image: cash-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8083:8083"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+  transfer-app:
+    container_name: transfer-app
+    build:
+      context: ./transfer
+      dockerfile: Dockerfile
+    image: transfer-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8084:8084"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+  notification-app:
+    container_name: notification-app
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    image: notification-app
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8085:8085"
+    depends_on:
+      consul:
+        condition: service_healthy
+      consul-seeder:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - bank-network
+
+volumes:
+  consul_data:
+  db-data:
+
+networks:
+  bank-network:

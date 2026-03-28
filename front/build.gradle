@@ -1,7 +1,80 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 version = '0.0.1-SNAPSHOT'
 description = 'front'
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
+}
+
+def accountClientOut = layout.buildDirectory.dir("generated/account-client")
+def cashClientOut = layout.buildDirectory.dir("generated/cash-client")
+def transferClientOut = layout.buildDirectory.dir("generated/transfer-client")
+
+tasks.register("generateAccountClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/account-public-openapi.yaml")
+    outputDir.set(accountClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.front.integration.account.domain")
+    apiPackage.set("ru.practicum.front.integration.account.api")
+    invokerPackage.set("ru.practicum.front.integration.account.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+tasks.register("generateCashClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/cash-openapi.yaml")
+    outputDir.set(cashClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.front.integration.cash.domain")
+    apiPackage.set("ru.practicum.front.integration.cash.api")
+    invokerPackage.set("ru.practicum.front.integration.cash.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+tasks.register("generateTransferClientOpenApi", GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set("$rootDir/openapi/transfer-openapi.yaml")
+    outputDir.set(transferClientOut.map { it.asFile.absolutePath })
+
+    modelPackage.set("ru.practicum.front.integration.transfer.domain")
+    apiPackage.set("ru.practicum.front.integration.transfer.api")
+    invokerPackage.set("ru.practicum.front.integration.transfer.client")
+
+    configOptions.set([
+            library        : "restclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(layout.buildDirectory.dir("generated/account-client/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/cash-client/src/main/java"))
+            srcDir(layout.buildDirectory.dir("generated/transfer-client/src/main/java"))
+        }
+    }
+}
+
+tasks.named("compileJava") {
+    dependsOn("generateAccountClientOpenApi", "generateCashClientOpenApi", "generateTransferClientOpenApi")
 }

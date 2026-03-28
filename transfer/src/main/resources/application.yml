@@ -1,0 +1,77 @@
+spring:
+  config:
+    import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
+  application:
+    name: transfer
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
+      port: ${CONSUL_PORT:8500}
+      config:
+        enabled: true # Включаем чтение конфигурации из Consul KV
+        fail-fast: false # Не роняем сервис, если Consul временно недоступен при старте/чтении
+        prefixes:
+          - config # Базовый префикс KV: config/<context>/...
+        format: YAML # Значение ключа data интерпретируется как YAML
+        data-key: data # Имя leaf-ключа с полезной нагрузкой конфигурации
+        profile-separator: "," # Разделитель context и profile (пример: gateway,default)
+        watch:
+          wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
+          delay: 10000 # Интервал между итерациями watch (миллисекунды)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${TRANSFER_JWT_ISSUER_URI}
+          jwk-set-uri: ${TRANSFER_JWT_JWK_SET_URI}
+      client:
+        registration:
+          transfer-service-client:
+            provider: keycloak
+            authorization-grant-type: client_credentials
+            client-id: ${TRANSFER_CLIENT_ID}
+            client-secret: ${TRANSFER_CLIENT_SECRET}
+        provider:
+          keycloak:
+            token-uri: ${TRANSFER_OAUTH2_TOKEN_URI}
+
+server:
+  port: ${SERVER_PORT}
+
+integration:
+  oauth2:
+    registration-id: ${TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID}
+  account:
+    base-url: ${ACCOUNT_BASE_URL}
+  notification:
+    base-url: ${NOTIFICATION_BASE_URL}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      accountService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+      notificationService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+  retry:
+    instances:
+      accountService:
+        maxAttempts: 3
+        waitDuration: 300ms
+        ignoreExceptions:
+          - ru.practicum.transfer.domain.exception.InvalidAmountException
+          - ru.practicum.transfer.domain.exception.AccountNotFoundException
+          - ru.practicum.transfer.domain.exception.InsufficientFundsException
+      notificationService:
+        maxAttempts: 3
+        waitDuration: 300ms

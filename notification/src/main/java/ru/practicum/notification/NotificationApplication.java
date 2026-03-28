@@ -1,0 +1,12 @@
+package ru.practicum.notification;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication(scanBasePackages = "ru.practicum")
+public class NotificationApplication {
+
+    static void main(String[] args) {
+        SpringApplication.run(NotificationApplication.class, args);
+    }
+}

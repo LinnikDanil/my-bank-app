@@ -1,7 +1,46 @@
+spring:
+  config:
+    import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
+  application:
+    name: front
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: ${FRONT_CLIENT_ID}
+            client-secret: ${FRONT_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+        provider:
+          keycloak:
+            authorization-uri: ${FRONT_AUTHORIZATION_URI}
+            token-uri: ${FRONT_TOKEN_URI}
+            user-info-uri: ${FRONT_USER_INFO_URI}
+            user-name-attribute: preferred_username
+            jwk-set-uri: ${FRONT_JWK_SET_URI}
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
+      port: ${CONSUL_PORT:8500}
+      config:
+        enabled: true # Включаем чтение конфигурации из Consul KV
+        fail-fast: false # Не роняем сервис, если Consul временно недоступен при старте/чтении
+        prefixes:
+          - config # Базовый префикс KV: config/<context>/...
+        format: YAML # Значение ключа data интерпретируется как YAML
+        data-key: data # Имя leaf-ключа с полезной нагрузкой конфигурации
+        profile-separator: "," # Разделитель context и profile (пример: gateway,default)
+        watch:
+          wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
+          delay: 10000 # Интервал между итерациями watch (миллисекунды)
+
 server:
   port: ${SERVER_PORT}
 
-spring:
-  application:
-    name: front
-
+front:
+  gateway:
+    base-url: ${FRONT_GATEWAY_BASE_URL}
