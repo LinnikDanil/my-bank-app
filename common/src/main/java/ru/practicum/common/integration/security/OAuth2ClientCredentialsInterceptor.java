@@ -1,5 +1,7 @@
-package ru.practicum.account.integration.notification.config;
+package ru.practicum.common.integration.security;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -15,7 +17,12 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * Добавляет bearer-токен, полученный по client_credentials, в исходящие HTTP-запросы.
+ */
 @Component
+@ConditionalOnBean(OAuth2AuthorizedClientManager.class)
+@ConditionalOnProperty(name = "integration.oauth2.registration-id")
 public class OAuth2ClientCredentialsInterceptor implements ClientHttpRequestInterceptor {
 
     private final OAuth2AuthorizedClientManager authorizedClientManager;
@@ -24,13 +31,14 @@ public class OAuth2ClientCredentialsInterceptor implements ClientHttpRequestInte
 
     public OAuth2ClientCredentialsInterceptor(
             OAuth2AuthorizedClientManager authorizedClientManager,
-            @Value("${integration.oauth2.registration-id}") String registrationId
+            @Value("${integration.oauth2.registration-id}") String registrationId,
+            @Value("${spring.application.name:service}") String applicationName
     ) {
         this.authorizedClientManager = authorizedClientManager;
         this.registrationId = registrationId;
         this.principal = new AnonymousAuthenticationToken(
-                "account-service-key",
-                "account-service",
+                applicationName + "-service-key",
+                applicationName + "-service",
                 AuthorityUtils.createAuthorityList("ROLE_SYSTEM")
         );
     }

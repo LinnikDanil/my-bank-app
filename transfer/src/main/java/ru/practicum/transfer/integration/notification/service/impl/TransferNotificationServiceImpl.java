@@ -1,5 +1,7 @@
 package ru.practicum.transfer.integration.notification.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class TransferNotificationServiceImpl implements TransferNotificationServ
     private final NotificationInternalApi notificationInternalApi;
 
     @Override
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyTransferCompletedFallback")
+    @Retry(name = "notificationService", fallbackMethod = "notifyTransferCompletedFallback")
     public void notifyTransferCompleted(String usernameFrom, String usernameTo, BigDecimal amount) {
         NotificationEventPayload payload = new NotificationEventPayload()
                 .usernameFrom(usernameFrom)
@@ -40,13 +44,15 @@ public class TransferNotificationServiceImpl implements TransferNotificationServ
                 .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .recipients(recipients)
                 .payload(payload);
+        notificationInternalApi.sendNotificationEvent(event);
+        log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
+    }
 
-        try {
-            notificationInternalApi.sendNotificationEvent(event);
-            log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
-        } catch (Exception ex) {
-            log.error("Не удалось отправить событие в notification-service: eventId={}, type={}",
-                    event.getEventId(), eventType, ex);
-        }
+    private void notifyTransferCompletedFallback(String usernameFrom,
+                                                 String usernameTo,
+                                                 BigDecimal amount,
+                                                 Throwable throwable) {
+        log.error("Не удалось отправить событие TRANSFER_COMPLETED: {} -> {}, сумма {}",
+                usernameFrom, usernameTo, amount, throwable);
     }
 }

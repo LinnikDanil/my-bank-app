@@ -1,5 +1,7 @@
 package ru.practicum.account.integration.notification.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
     private final NotificationInternalApi notificationInternalApi;
 
     @Override
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyAccountUpdatedFallback")
+    @Retry(name = "notificationService", fallbackMethod = "notifyAccountUpdatedFallback")
     public void notifyAccountUpdated(Account account) {
         NotificationEventPayload payload = new NotificationEventPayload()
                 .username(account.getUsername())
@@ -34,6 +38,8 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
     }
 
     @Override
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyCashDepositFallback")
+    @Retry(name = "notificationService", fallbackMethod = "notifyCashDepositFallback")
     public void notifyCashDeposit(String username, BigDecimal amount) {
         NotificationEventPayload payload = new NotificationEventPayload()
                 .username(username)
@@ -43,6 +49,8 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
     }
 
     @Override
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyCashWithdrawFallback")
+    @Retry(name = "notificationService", fallbackMethod = "notifyCashWithdrawFallback")
     public void notifyCashWithdraw(String username, BigDecimal amount) {
         NotificationEventPayload payload = new NotificationEventPayload()
                 .username(username)
@@ -59,13 +67,19 @@ public class AccountNotificationServiceImpl implements AccountNotificationServic
                 .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .recipients(List.of(recipient))
                 .payload(payload);
+        notificationInternalApi.sendNotificationEvent(event);
+        log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
+    }
 
-        try {
-            notificationInternalApi.sendNotificationEvent(event);
-            log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
-        } catch (Exception ex) {
-            log.error("Не удалось отправить событие в notification-service: eventId={}, type={}",
-                    event.getEventId(), eventType, ex);
-        }
+    private void notifyAccountUpdatedFallback(Account account, Throwable throwable) {
+        log.error("Не удалось отправить событие ACCOUNT_UPDATED для пользователя {}", account.getUsername(), throwable);
+    }
+
+    private void notifyCashDepositFallback(String username, BigDecimal amount, Throwable throwable) {
+        log.error("Не удалось отправить событие CASH_DEPOSIT для пользователя {} на сумму {}", username, amount, throwable);
+    }
+
+    private void notifyCashWithdrawFallback(String username, BigDecimal amount, Throwable throwable) {
+        log.error("Не удалось отправить событие CASH_WITHDRAW для пользователя {} на сумму {}", username, amount, throwable);
     }
 }

@@ -1,5 +1,7 @@
 package ru.practicum.cash.integration.account.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,8 @@ public class CashAccountServiceImpl implements CashAccountService {
     private final AccountInternalApi accountInternalApi;
 
     @Override
+    @CircuitBreaker(name = "accountService")
+    @Retry(name = "accountService")
     public BalanceResponse deposit(String username, BigDecimal amount) {
         try {
             return accountInternalApi.internalDeposit(username, new MoneyAmountRequest().amount(amount));
@@ -35,6 +39,8 @@ public class CashAccountServiceImpl implements CashAccountService {
     }
 
     @Override
+    @CircuitBreaker(name = "accountService")
+    @Retry(name = "accountService")
     public BalanceResponse withdraw(String username, BigDecimal amount) {
         try {
             return accountInternalApi.internalWithdraw(username, new MoneyAmountRequest().amount(amount));

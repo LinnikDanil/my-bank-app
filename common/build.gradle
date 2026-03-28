@@ -1,0 +1,14 @@
+version = '0.0.1'
+description = 'common'
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+}

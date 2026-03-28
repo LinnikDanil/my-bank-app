@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 import ru.practicum.account.integration.notification.client.ApiClient;
+import ru.practicum.common.integration.security.OAuth2ClientCredentialsInterceptor;
 
 /**
  * Конфигурация {@link RestClient} для интеграции с Notification-сервисом.

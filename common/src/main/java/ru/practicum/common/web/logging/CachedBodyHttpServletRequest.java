@@ -1,4 +1,4 @@
-package ru.practicum.account.web.logging;
+package ru.practicum.common.web.logging;
 
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
@@ -13,6 +13,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Обертка над {@link HttpServletRequest}, которая кеширует тело запроса,
+ * чтобы его можно было читать многократно (например, в фильтре и interceptor).
+ */
 public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
 
     private final byte[] cachedBody;

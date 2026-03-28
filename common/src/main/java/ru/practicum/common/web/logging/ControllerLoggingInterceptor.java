@@ -1,4 +1,4 @@
-package ru.practicum.transfer.web.logging;
+package ru.practicum.common.web.logging;
 
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Interceptor для логирования входящих HTTP-запросов контроллеров.
+ *
+ * <p>Логирует метод, URI, заголовки (с маскированием чувствительных)
+ * и тело запроса с ограничением по длине.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
