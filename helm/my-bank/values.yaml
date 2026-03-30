@@ -1,0 +1,177 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+front:
+  replicaCount: 1
+  image:
+    repository: front-app
+    tag: latest
+  service:
+    port: 8086
+  env:
+    SERVER_PORT: "8086"
+    FRONT_CLIENT_ID: front
+    FRONT_AUTHORIZATION_URI: http://localhost/realms/my-bank-realm/protocol/openid-connect/auth
+    FRONT_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+    FRONT_USER_INFO_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/userinfo
+    FRONT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    FRONT_ACCOUNT_BASE_URL: http://account:8082
+    FRONT_CASH_BASE_URL: http://cash:8083
+    FRONT_TRANSFER_BASE_URL: http://transfer:8084
+
+account:
+  replicaCount: 1
+  image:
+    repository: account-app
+    tag: latest
+  service:
+    port: 8082
+  env:
+    SERVER_PORT: "8082"
+    DATASOURCE_SCHEMA_NAME: bank_app
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
+    SPRING_DATASOURCE_USERNAME: postgres
+    NOTIFICATION_BASE_URL: http://notification:8085
+    ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+    ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    ACCOUNT_CLIENT_ID: account-service
+    ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+    ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
+
+cash:
+  replicaCount: 1
+  image:
+    repository: cash-app
+    tag: latest
+  service:
+    port: 8083
+  env:
+    SERVER_PORT: "8083"
+    ACCOUNT_BASE_URL: http://account:8082
+    NOTIFICATION_BASE_URL: http://notification:8085
+    CASH_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+    CASH_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    CASH_CLIENT_ID: cash-service
+    CASH_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+    CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
+
+transfer:
+  replicaCount: 1
+  image:
+    repository: transfer-app
+    tag: latest
+  service:
+    port: 8084
+  env:
+    SERVER_PORT: "8084"
+    ACCOUNT_BASE_URL: http://account:8082
+    NOTIFICATION_BASE_URL: http://notification:8085
+    TRANSFER_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+    TRANSFER_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    TRANSFER_CLIENT_ID: transfer-service
+    TRANSFER_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+    TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+
+notification:
+  replicaCount: 1
+  image:
+    repository: notification-app
+    tag: latest
+  service:
+    port: 8085
+  env:
+    SERVER_PORT: "8085"
+    NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+    NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  paths:
+    - path: /realms
+      pathType: Prefix
+      service:
+        name: keycloak
+        port: 80
+    - path: /resources
+      pathType: Prefix
+      service:
+        name: keycloak
+        port: 80
+    - path: /
+      pathType: Prefix
+      service:
+        name: front
+        port: 8086
+
+postgresql:
+  fullnameOverride: postgresql
+  auth:
+    username: postgres
+    database: bank
+  primary:
+    persistence:
+      enabled: true
+      size: 2Gi
+    initdb:
+      scripts:
+        01-create-schema.sql: |
+          CREATE SCHEMA IF NOT EXISTS bank_app;
+
+keycloak:
+  image:
+    repository: bitnamilegacy/keycloak
+    tag: 26.3.3-debian-12-r0
+  volumePermissions:
+    enabled: false
+  fullnameOverride: keycloak
+  postgresql:
+    enabled: false
+  production: false
+  auth:
+    adminUser: admin
+  externalDatabase:
+    host: postgresql
+    port: 5432
+    user: postgres
+    database: bank
+  httpRelativePath: /
+  extraStartupArgs: "--import-realm"
+  extraEnvVars:
+    - name: KC_HOSTNAME
+      value: localhost
+    - name: KC_HOSTNAME_STRICT
+      value: "false"
+    - name: KC_HOSTNAME_STRICT_HTTPS
+      value: "false"
+    - name: KC_PROXY_HEADERS
+      value: xforwarded
+    - name: KC_HTTP_ENABLED
+      value: "true"
+  extraVolumes:
+    - name: realm-import
+      secret:
+        secretName: keycloak-realm-import
+  extraVolumeMounts:
+    - name: realm-import
+      mountPath: /opt/bitnami/keycloak/data/import
+      readOnly: true
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 60
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 90
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
