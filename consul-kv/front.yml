@@ -1,9 +1,0 @@
-SERVER_PORT: 8086
-FRONT_GATEWAY_BASE_URL: http://gateway-app:8081
-
-FRONT_CLIENT_ID: front
-FRONT_CLIENT_SECRET: front-secret
-FRONT_AUTHORIZATION_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/auth
-FRONT_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
-FRONT_USER_INFO_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/userinfo
-FRONT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs

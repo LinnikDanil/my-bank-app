@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-smoke"
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: smoke
+      image: docker.io/bitnamilegacy/keycloak:26.3.3-debian-12-r0
+      command: ["/bin/bash", "-ec"]
+      args:
+        - |
+          wait_tcp() {
+            local host="$1"
+            local port="$2"
+            local attempt=0
+            until timeout 5 bash -c "cat < /dev/null > /dev/tcp/${host}/${port}"; do
+              attempt=$((attempt + 1))
+              if [ "$attempt" -ge 300 ]; then
+                echo "Timeout waiting for ${host}:${port}"
+                return 1
+              fi
+              sleep 2
+            done
+          }
+
+          wait_tcp front 8086
+          wait_tcp account 8082
+          wait_tcp cash 8083
+          wait_tcp transfer 8084
+          wait_tcp notification 8085
+          wait_tcp keycloak 80
+          wait_tcp postgresql 5432

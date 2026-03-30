@@ -16,7 +16,6 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -25,18 +24,19 @@ bin/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-
 ### VS Code ###
 .vscode/
-
 ### Local env ###
 .env
 .env.*
 !.env.example
+# Helm generated dependency artifacts
+helm/my-bank/charts/*.tgz
+helm/my-bank/charts/*/charts/
+helm/my-bank/charts/*/Chart.lock

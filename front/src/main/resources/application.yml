@@ -1,6 +1,4 @@
 spring:
-  config:
-    import: "optional:consul:" # Подключаем Consul как источник конфигурации (без фатала при временной недоступности)
   application:
     name: front
   security:
@@ -22,25 +20,12 @@ spring:
             user-info-uri: ${FRONT_USER_INFO_URI}
             user-name-attribute: preferred_username
             jwk-set-uri: ${FRONT_JWK_SET_URI}
-  cloud:
-    consul:
-      host: ${CONSUL_HOST:localhost} #(localhost для локального запуска, consul для Docker)
-      port: ${CONSUL_PORT:8500}
-      config:
-        enabled: true # Включаем чтение конфигурации из Consul KV
-        fail-fast: false # Не роняем сервис, если Consul временно недоступен при старте/чтении
-        prefixes:
-          - config # Базовый префикс KV: config/<context>/...
-        format: YAML # Значение ключа data интерпретируется как YAML
-        data-key: data # Имя leaf-ключа с полезной нагрузкой конфигурации
-        profile-separator: "," # Разделитель context и profile (пример: gateway,default)
-        watch:
-          wait-time: 5 # Long-poll ожидание ответа от Consul (секунды)
-          delay: 10000 # Интервал между итерациями watch (миллисекунды)
 
 server:
   port: ${SERVER_PORT}
 
 front:
-  gateway:
-    base-url: ${FRONT_GATEWAY_BASE_URL}
+  api:
+    account-base-url: ${FRONT_ACCOUNT_BASE_URL}
+    cash-base-url: ${FRONT_CASH_BASE_URL}
+    transfer-base-url: ${FRONT_TRANSFER_BASE_URL}
