@@ -17,47 +17,6 @@ services:
     networks:
       - bank-network
 
-  consul:
-    image: hashicorp/consul:1.17
-    container_name: consul
-    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
-    ports:
-      - "8500:8500"
-    volumes:
-      - consul_data:/consul/data
-    healthcheck:
-      test: ["CMD", "consul", "members"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    networks:
-      - bank-network
-
-  consul-seeder:
-    image: curlimages/curl:8.8.0
-    container_name: consul-seeder
-    depends_on:
-      consul:
-        condition: service_healthy
-    volumes:
-      - ./consul-kv:/kv:ro
-    command: >
-      sh -c '
-        set -e
-        echo "Seeding Consul KV..."
-        curl --fail --request PUT --data-binary @/kv/gateway.yml http://consul:8500/v1/kv/config/gateway/data
-        curl --fail --request PUT --data-binary @/kv/front.yml http://consul:8500/v1/kv/config/front/data
-        curl --fail --request PUT --data-binary @/kv/account.yml http://consul:8500/v1/kv/config/account/data
-        curl --fail --request PUT --data-binary @/kv/cash.yml http://consul:8500/v1/kv/config/cash/data
-        curl --fail --request PUT --data-binary @/kv/transfer.yml http://consul:8500/v1/kv/config/transfer/data
-        curl --fail --request PUT --data-binary @/kv/notification.yml http://consul:8500/v1/kv/config/notification/data
-        echo "Consul KV seeded"
-      '
-    networks:
-      - bank-network
-    restart: "no"
-
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     command: ["start-dev", "--import-realm"]
@@ -80,28 +39,6 @@ services:
     networks:
       - bank-network
 
-
-  gateway-app:
-    container_name: gateway-app
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    image: gateway-app
-    restart: on-failure
-    env_file:
-      - .env
-    ports:
-      - "8081:8081"
-    depends_on:
-      consul:
-        condition: service_healthy
-      consul-seeder:
-        condition: service_started
-      keycloak:
-        condition: service_healthy
-    networks:
-      - bank-network
-
   front-app:
     container_name: front-app
     build:
@@ -109,15 +46,20 @@ services:
       dockerfile: Dockerfile
     image: front-app
     restart: on-failure
-    env_file:
-      - .env
     ports:
       - "8086:8086"
+    environment:
+      SERVER_PORT: "8086"
+      FRONT_CLIENT_ID: front
+      FRONT_CLIENT_SECRET: front-secret
+      FRONT_AUTHORIZATION_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/auth
+      FRONT_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
+      FRONT_USER_INFO_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/userinfo
+      FRONT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+      FRONT_ACCOUNT_BASE_URL: http://account-app:8082
+      FRONT_CASH_BASE_URL: http://cash-app:8083
+      FRONT_TRANSFER_BASE_URL: http://transfer-app:8084
     depends_on:
-      consul:
-        condition: service_healthy
-      consul-seeder:
-        condition: service_started
       keycloak:
         condition: service_healthy
     networks:
@@ -130,16 +72,23 @@ services:
       dockerfile: Dockerfile
     image: account-app
     restart: on-failure
-    env_file:
-      - .env
     ports:
       - "8082:8082"
+    environment:
+      SERVER_PORT: "8082"
+      DATASOURCE_SCHEMA_NAME: bank_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bank-db:5432/bank?currentSchema=bank_app
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      NOTIFICATION_BASE_URL: http://notification-app:8085
+      ACCOUNT_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+      ACCOUNT_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+      ACCOUNT_CLIENT_ID: account-service
+      ACCOUNT_CLIENT_SECRET: account-secret
+      ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
+      ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
     depends_on:
-      consul:
-        condition: service_healthy
       bank-db:
-        condition: service_started
-      consul-seeder:
         condition: service_started
       keycloak:
         condition: service_healthy
@@ -153,15 +102,19 @@ services:
       dockerfile: Dockerfile
     image: cash-app
     restart: on-failure
-    env_file:
-      - .env
     ports:
       - "8083:8083"
+    environment:
+      SERVER_PORT: "8083"
+      ACCOUNT_BASE_URL: http://account-app:8082
+      NOTIFICATION_BASE_URL: http://notification-app:8085
+      CASH_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+      CASH_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+      CASH_CLIENT_ID: cash-service
+      CASH_CLIENT_SECRET: cash-secret
+      CASH_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
+      CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
     depends_on:
-      consul:
-        condition: service_healthy
-      consul-seeder:
-        condition: service_started
       keycloak:
         condition: service_healthy
     networks:
@@ -174,15 +127,19 @@ services:
       dockerfile: Dockerfile
     image: transfer-app
     restart: on-failure
-    env_file:
-      - .env
     ports:
       - "8084:8084"
+    environment:
+      SERVER_PORT: "8084"
+      ACCOUNT_BASE_URL: http://account-app:8082
+      NOTIFICATION_BASE_URL: http://notification-app:8085
+      TRANSFER_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+      TRANSFER_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+      TRANSFER_CLIENT_ID: transfer-service
+      TRANSFER_CLIENT_SECRET: transfer-secret
+      TRANSFER_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
+      TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
     depends_on:
-      consul:
-        condition: service_healthy
-      consul-seeder:
-        condition: service_started
       keycloak:
         condition: service_healthy
     networks:
@@ -195,22 +152,19 @@ services:
       dockerfile: Dockerfile
     image: notification-app
     restart: on-failure
-    env_file:
-      - .env
     ports:
       - "8085:8085"
+    environment:
+      SERVER_PORT: "8085"
+      NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
+      NOTIFICATION_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
     depends_on:
-      consul:
-        condition: service_healthy
-      consul-seeder:
-        condition: service_started
       keycloak:
         condition: service_healthy
     networks:
       - bank-network
 
 volumes:
-  consul_data:
   db-data:
 
 networks:

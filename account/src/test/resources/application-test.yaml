@@ -12,12 +12,3 @@ ACCOUNT_CLIENT_SECRET: test-secret
 ACCOUNT_OAUTH2_TOKEN_URI: http://localhost:8080/realms/test/protocol/openid-connect/token
 ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
 NOTIFICATION_BASE_URL: http://localhost:9999
-
-spring:
-  cloud:
-    consul:
-      enabled: false
-      config:
-        enabled: false
-      discovery:
-        enabled: false

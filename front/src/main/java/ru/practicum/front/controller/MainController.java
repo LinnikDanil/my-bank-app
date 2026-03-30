@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClientResponseException;
 import ru.practicum.front.controller.dto.AccountDto;
 import ru.practicum.front.controller.dto.CashAction;
-import ru.practicum.front.integration.BankGatewayClient;
+import ru.practicum.front.integration.BankApiClient;
 import ru.practicum.front.integration.account.domain.AccountResponse;
 import ru.practicum.front.integration.account.domain.RecipientPageResponse;
 
@@ -32,7 +32,7 @@ public class MainController {
     private static final int DEFAULT_SIZE = 20;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
 
-    private final BankGatewayClient bankGatewayClient;
+    private final BankApiClient bankGatewayClient;
 
     @GetMapping
     public String index() {

@@ -1,3 +1,0 @@
-SERVER_PORT: 8081
-GATEWAY_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
-GATEWAY_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs

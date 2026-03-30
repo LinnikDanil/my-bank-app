@@ -8,12 +8,3 @@ TRANSFER_OAUTH2_TOKEN_URI: http://localhost:8080/realms/test/protocol/openid-con
 TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
 ACCOUNT_BASE_URL: http://localhost:9998
 NOTIFICATION_BASE_URL: http://localhost:9999
-
-spring:
-  cloud:
-    consul:
-      enabled: false
-      config:
-        enabled: false
-      discovery:
-        enabled: false
