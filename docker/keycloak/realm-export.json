@@ -52,14 +52,14 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8086/login/oauth2/code/keycloak",
-        "http://front-app:8080/login/oauth2/code/keycloak"
+        "http://localhost/login/oauth2/code/keycloak",
+        "http://localhost/*"
       ],
       "webOrigins": [
-        "http://localhost:8086"
+        "http://localhost"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:8086/*"
+        "post.logout.redirect.uris": "http://localhost/*"
       }
     },
     {

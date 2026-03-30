@@ -1,17 +1,17 @@
 # My Bank App
 
-Микросервисное приложение «Банк» для проектной работы 9 спринта.
+Микросервисное приложение «Банк» для проектной работы 10 спринта.
 
 Проект реализует:
 - фронт с одной HTML-страницей (`front`),
-- Gateway API (`gateway`),
 - сервис аккаунтов (`account`),
 - сервис внесения/снятия средств (`cash`),
 - сервис переводов (`transfer`),
 - сервис уведомлений (`notification`),
 - OAuth 2.0 авторизацию через Keycloak,
-- Service Discovery + Externalized Config через Consul,
-- запуск всех компонентов через Docker Compose.
+- Service Discovery через Kubernetes Service DNS,
+- конфигурацию через Kubernetes ConfigMap/Secret,
+- развёртывание через Helm (umbrella chart + сабчарты).
 
 ## 1. Архитектура
 
@@ -19,26 +19,26 @@
 
 | Модуль | Назначение | Порт |
 |---|---|---:|
-| `front` | UI (Thymeleaf), OAuth2 Login (Authorization Code Flow), запросы в Gateway | `8086` |
-| `gateway` | Маршрутизация запросов в микросервисы, проброс JWT (`TokenRelay`) | `8081` |
+| `front` | UI (Thymeleaf), OAuth2 Login (Authorization Code Flow) | `8086` |
 | `account` | Данные аккаунта, баланс, список получателей | `8082` |
 | `cash` | Пополнение/снятие со счёта | `8083` |
 | `transfer` | Переводы между пользователями | `8084` |
 | `notification` | Обработка событий уведомлений | `8085` |
-| `keycloak` | OAuth 2.0 / OIDC сервер авторизации | `8080` |
-| `consul` | Service Discovery + Config KV | `8500` |
-| `bank-db` (PostgreSQL) | Персистентная БД аккаунтов | `5433 -> 5432` |
+| `keycloak` | OAuth 2.0 / OIDC сервер авторизации | `80` (svc), `8080` (container) |
+| `postgresql` | Персистентная БД аккаунтов/Keycloak | `5432` |
+| `ingress-nginx` | Внешний вход в приложение (Ingress) | `80/443` |
 
 ### 1.2. Схема взаимодействия
 
 ```mermaid
 flowchart LR
-  User[Пользователь] --> Front[Front UI]
-  Front -->|OAuth2 Login| Keycloak[Keycloak]
-  Front -->|JWT + REST| Gateway[Gateway API]
-  Gateway --> Account[Account]
-  Gateway --> Cash[Cash]
-  Gateway --> Transfer[Transfer]
+  User[Пользователь] --> Ingress[Ingress]
+  Ingress --> Front[Front UI]
+  Ingress --> Keycloak[Keycloak]
+
+  Front -->|JWT + REST| Account[Account]
+  Front -->|JWT + REST| Cash[Cash]
+  Front -->|JWT + REST| Transfer[Transfer]
 
   Cash -->|Client Credentials + REST| Account
   Transfer -->|Client Credentials + REST| Account
@@ -48,13 +48,12 @@ flowchart LR
   Transfer -->|Client Credentials + REST| Notification
 
   Account --> DB[(PostgreSQL)]
+  Keycloak --> DB
 ```
 
 ## 2. Технологии
 
-- Java, Spring Boot, Spring Security, Spring Cloud
-- Spring Cloud Gateway Server WebMVC
-- Spring Cloud Consul Discovery + Config
+- Java 25, Spring Boot, Spring Security
 - OAuth2/OIDC (Keycloak)
 - Spring Data JPA + Hibernate
 - Liquibase
@@ -62,26 +61,24 @@ flowchart LR
 - OpenAPI Generator
 - JUnit 5, Spring Boot Test, Testcontainers (в модуле `account`)
 - Docker, Docker Compose
+- Kubernetes
+- Helm
 
 ## 3. Требования и окружение
 
 ### 3.1. Обязательные инструменты
 
-- Docker + Docker Compose
-- JDK (см. замечание ниже)
+- Docker Desktop (с включённым Kubernetes)
+- `kubectl`
+- `helm`
+- JDK 25
 - Bash/Zsh
 
 ### 3.2. Версия Java
 
-В `build.gradle` проекта сейчас настроен toolchain `Java 25`.
+В `build.gradle` проекта настроен toolchain `Java 25`.
 
-ТЗ требует Java 21. Для полного соответствия ТЗ:
-1. либо установить Java 25 для текущей конфигурации,
-2. либо изменить `JavaLanguageVersion.of(25)` на `JavaLanguageVersion.of(21)` и проверить сборку/тесты.
-
-## 4. Быстрый старт (рекомендуется: Docker Compose)
-
-> В проекте используется `.env` с параметрами PostgreSQL и Consul.
+## 4. Быстрый старт (Kubernetes + Helm)
 
 ### 4.1. Сборка jar-файлов
 
@@ -91,57 +88,74 @@ flowchart LR
 bash ./gradlew clean build
 ```
 
-### 4.2. Запуск всех сервисов
+### 4.2. Сборка Docker-образов
+
+```bash
+docker build -t front-app:latest ./front
+docker build -t account-app:latest ./account
+docker build -t cash-app:latest ./cash
+docker build -t transfer-app:latest ./transfer
+docker build -t notification-app:latest ./notification
+```
+
+### 4.3. Установка ingress-nginx
+
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+```
+
+### 4.4. Деплой приложения
+
+```bash
+helm dependency update helm/my-bank
+helm upgrade --install my-bank helm/my-bank \
+  -f helm/my-bank/values.yaml \
+  -f helm/my-bank/values-secret.yaml
+```
+
+### 4.5. Проверка статуса
+
+```bash
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+```
+
+Открыть:
+- Front UI: [http://localhost/](http://localhost/)
+
+### 4.6. Остановка
+
+```bash
+helm uninstall my-bank
+```
+
+## 5. Локальный запуск сервисов (legacy Docker Compose)
+
+Вариант для локальной разработки без Kubernetes.
 
 ```bash
 docker compose up -d --build
 ```
 
-### 4.3. Проверка статуса
-
-```bash
-docker ps
-```
-
 Открыть:
 - Front UI: [http://localhost:8086](http://localhost:8086)
 - Keycloak: [http://localhost:8080](http://localhost:8080)
-- Consul UI: [http://localhost:8500](http://localhost:8500)
 
-### 4.4. Остановка
+Остановка:
 
 ```bash
 docker compose down
 ```
 
-С удалением volume БД/Consul:
+С удалением volume БД:
 
 ```bash
 docker compose down -v
 ```
-
-## 5. Локальный запуск сервисов (без контейнеров приложений)
-
-Вариант для разработки: инфраструктура в Docker, сервисы через Gradle.
-
-### 5.1. Поднять инфраструктуру
-
-```bash
-docker compose up -d bank-db consul consul-seeder keycloak
-```
-
-### 5.2. Запуск сервисов по одному
-
-```bash
-bash ./gradlew :gateway:bootRun
-bash ./gradlew :front:bootRun
-bash ./gradlew :account:bootRun
-bash ./gradlew :cash:bootRun
-bash ./gradlew :transfer:bootRun
-bash ./gradlew :notification:bootRun
-```
-
-Примечание: сервисы читают конфигурацию из Consul (`config/<service>/data`).
 
 ## 6. Учётные данные для тестирования
 
@@ -209,21 +223,18 @@ bash ./gradlew test
 bash ./gradlew integrationTest
 ```
 
-### 9.3. По модулю
+### 9.3. Helm-тесты
 
 ```bash
-bash ./gradlew :account:test
-bash ./gradlew :cash:test
-bash ./gradlew :transfer:test
-bash ./gradlew :notification:test
-bash ./gradlew :front:test
+helm lint helm/my-bank -f helm/my-bank/values.yaml -f helm/my-bank/values-secret.yaml
+helm template my-bank helm/my-bank -f helm/my-bank/values.yaml -f helm/my-bank/values-secret.yaml
+helm test my-bank
 ```
 
 ## 10. Docker-образы и упаковка
 
 Каждый сервис собирается в Executable JAR и упаковывается в отдельный Docker-образ (`Single Service per Host`):
 - `front/Dockerfile`
-- `gateway/Dockerfile`
 - `account/Dockerfile`
 - `cash/Dockerfile`
 - `transfer/Dockerfile`
@@ -233,21 +244,20 @@ bash ./gradlew :front:test
 
 ## 11. Конфигурация и секреты
 
-### 11.1. Локальные переменные окружения
+### 11.1. Локальные переменные окружения (Docker Compose)
 
 Файл `.env`:
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
 - `POSTGRES_DB`
-- `CONSUL_HOST`
-- `CONSUL_PORT`
 
-### 11.2. Consul KV
+### 11.2. Kubernetes ConfigMap/Secret
 
-Файлы конфигурации для сервисов находятся в [`consul-kv`](./consul-kv):
-- `front.yml`, `gateway.yml`, `account.yml`, `cash.yml`, `transfer.yml`, `notification.yml`
+Настройки и секреты сервисов задаются в Helm:
+- [`helm/my-bank/values.yaml`](./helm/my-bank/values.yaml)
+- [`helm/my-bank/values-secret.yaml`](./helm/my-bank/values-secret.yaml)
 
-`consul-seeder` в `docker-compose.yml` загружает их в KV при старте.
+В кластере они рендерятся в `ConfigMap` и `Secret` каждого сабчарта.
 
 ## 12. Структура проекта
 
@@ -256,11 +266,11 @@ my-bank-app/
 ├── account/
 ├── cash/
 ├── front/
-├── gateway/
 ├── notification/
 ├── transfer/
 ├── openapi/
-├── consul-kv/
+├── helm/
+│   └── my-bank/
 ├── docker/
 ├── docker-compose.yml
 ├── build.gradle
