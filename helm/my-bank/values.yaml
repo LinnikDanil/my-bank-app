@@ -2,87 +2,102 @@ global:
   imagePullPolicy: IfNotPresent
 
 front:
-  replicaCount: 1
-  image:
-    repository: front-app
-    tag: latest
-  service:
-    port: 8086
-  env:
-    SERVER_PORT: "8086"
-    FRONT_CLIENT_ID: front
-    FRONT_AUTHORIZATION_URI: http://localhost/realms/my-bank-realm/protocol/openid-connect/auth
-    FRONT_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-    FRONT_USER_INFO_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/userinfo
-    FRONT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-    FRONT_ACCOUNT_BASE_URL: http://account:8082
-    FRONT_CASH_BASE_URL: http://cash:8083
-    FRONT_TRANSFER_BASE_URL: http://transfer:8084
+  app:
+    nameOverride: front
+    replicaCount: 1
+    image:
+      repository: front-app
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      port: 8086
+    env:
+      SERVER_PORT: "8086"
+      FRONT_CLIENT_ID: front
+      FRONT_AUTHORIZATION_URI: http://localhost/realms/my-bank-realm/protocol/openid-connect/auth
+      FRONT_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+      FRONT_USER_INFO_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/userinfo
+      FRONT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+      FRONT_ACCOUNT_BASE_URL: http://account:8082
+      FRONT_CASH_BASE_URL: http://cash:8083
+      FRONT_TRANSFER_BASE_URL: http://transfer:8084
 
 account:
-  replicaCount: 1
-  image:
-    repository: account-app
-    tag: latest
-  service:
-    port: 8082
-  env:
-    SERVER_PORT: "8082"
-    DATASOURCE_SCHEMA_NAME: bank_app
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
-    SPRING_DATASOURCE_USERNAME: postgres
-    NOTIFICATION_BASE_URL: http://notification:8085
-    ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
-    ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-    ACCOUNT_CLIENT_ID: account-service
-    ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-    ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
+  app:
+    nameOverride: account
+    replicaCount: 1
+    image:
+      repository: account-app
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      port: 8082
+    env:
+      SERVER_PORT: "8082"
+      DATASOURCE_SCHEMA_NAME: bank_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
+      SPRING_DATASOURCE_USERNAME: postgres
+      NOTIFICATION_BASE_URL: http://notification:8085
+      ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+      ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+      ACCOUNT_CLIENT_ID: account-service
+      ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+      ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
 
 cash:
-  replicaCount: 1
-  image:
-    repository: cash-app
-    tag: latest
-  service:
-    port: 8083
-  env:
-    SERVER_PORT: "8083"
-    ACCOUNT_BASE_URL: http://account:8082
-    NOTIFICATION_BASE_URL: http://notification:8085
-    CASH_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
-    CASH_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-    CASH_CLIENT_ID: cash-service
-    CASH_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-    CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
+  app:
+    nameOverride: cash
+    replicaCount: 1
+    image:
+      repository: cash-app
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      port: 8083
+    env:
+      SERVER_PORT: "8083"
+      ACCOUNT_BASE_URL: http://account:8082
+      NOTIFICATION_BASE_URL: http://notification:8085
+      CASH_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+      CASH_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+      CASH_CLIENT_ID: cash-service
+      CASH_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+      CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
 
 transfer:
-  replicaCount: 1
-  image:
-    repository: transfer-app
-    tag: latest
-  service:
-    port: 8084
-  env:
-    SERVER_PORT: "8084"
-    ACCOUNT_BASE_URL: http://account:8082
-    NOTIFICATION_BASE_URL: http://notification:8085
-    TRANSFER_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
-    TRANSFER_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-    TRANSFER_CLIENT_ID: transfer-service
-    TRANSFER_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-    TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+  app:
+    nameOverride: transfer
+    replicaCount: 1
+    image:
+      repository: transfer-app
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      port: 8084
+    env:
+      SERVER_PORT: "8084"
+      ACCOUNT_BASE_URL: http://account:8082
+      NOTIFICATION_BASE_URL: http://notification:8085
+      TRANSFER_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+      TRANSFER_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+      TRANSFER_CLIENT_ID: transfer-service
+      TRANSFER_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
+      TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
 
 notification:
-  replicaCount: 1
-  image:
-    repository: notification-app
-    tag: latest
-  service:
-    port: 8085
-  env:
-    SERVER_PORT: "8085"
-    NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
-    NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+  app:
+    nameOverride: notification
+    replicaCount: 1
+    image:
+      repository: notification-app
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      port: 8085
+    env:
+      SERVER_PORT: "8085"
+      NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
+      NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
 
 ingress:
   enabled: true

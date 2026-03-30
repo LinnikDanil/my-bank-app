@@ -4,3 +4,9 @@ description: front service chart
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
+
+dependencies:
+  - name: java-service
+    version: 0.1.0
+    repository: file://../../lib/java-service
+    alias: app

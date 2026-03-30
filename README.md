@@ -110,6 +110,9 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-ngin
 ### 4.4. Деплой приложения
 
 ```bash
+for chart in front account cash transfer notification; do
+  helm dependency update helm/my-bank/charts/$chart
+done
 helm dependency update helm/my-bank
 helm upgrade --install my-bank helm/my-bank \
   -f helm/my-bank/values.yaml \
