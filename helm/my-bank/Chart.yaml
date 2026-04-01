@@ -27,3 +27,6 @@ dependencies:
   - name: keycloak
     version: ">=0.0.0"
     repository: https://charts.bitnami.com/bitnami
+  - name: kafka
+    version: ">=0.0.0"
+    repository: https://helm-charts.itboon.top/kafka

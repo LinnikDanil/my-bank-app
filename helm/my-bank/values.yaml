@@ -37,12 +37,10 @@ account:
       DATASOURCE_SCHEMA_NAME: bank_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
       SPRING_DATASOURCE_USERNAME: postgres
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
       ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-      ACCOUNT_CLIENT_ID: account-service
-      ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-      ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
 
 cash:
   app:
@@ -57,7 +55,8 @@ cash:
     env:
       SERVER_PORT: "8083"
       ACCOUNT_BASE_URL: http://account:8082
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
       CASH_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       CASH_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
       CASH_CLIENT_ID: cash-service
@@ -77,7 +76,8 @@ transfer:
     env:
       SERVER_PORT: "8084"
       ACCOUNT_BASE_URL: http://account:8082
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
       TRANSFER_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       TRANSFER_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
       TRANSFER_CLIENT_ID: transfer-service
@@ -96,8 +96,16 @@ notification:
       port: 8085
     env:
       SERVER_PORT: "8085"
-      NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
-      NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
+      NOTIFICATION_CONSUMER_GROUP_ID: notification-service
+    probes:
+      startup:
+        enabled: false
+      readiness:
+        enabled: false
+      liveness:
+        enabled: false
 
 ingress:
   enabled: true
@@ -190,3 +198,14 @@ keycloak:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 6
+
+kafka:
+  fullnameOverride: kafka
+  broker:
+    replicaCount: 1
+    config:
+      auto.create.topics.enable: "true"
+      num.partitions: "3"
+    persistence:
+      enabled: true
+      size: 2Gi

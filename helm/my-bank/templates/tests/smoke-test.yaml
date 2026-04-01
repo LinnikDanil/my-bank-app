@@ -30,6 +30,6 @@ spec:
           wait_tcp account 8082
           wait_tcp cash 8083
           wait_tcp transfer 8084
-          wait_tcp notification 8085
           wait_tcp keycloak 80
           wait_tcp postgresql 5432
+          wait_tcp kafka-broker 9092

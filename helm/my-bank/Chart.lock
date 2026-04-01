@@ -20,5 +20,8 @@ dependencies:
 - name: keycloak
   repository: https://charts.bitnami.com/bitnami
   version: 25.2.0
-digest: sha256:55b62ee21118f277046b9ff9e909e5d042f52da249dcef03225fdd53996c0e71
-generated: "2026-03-30T17:43:34.138709+03:00"
+- name: kafka
+  repository: https://helm-charts.itboon.top/kafka
+  version: 18.0.1
+digest: sha256:7c0600f921111002abedb880f232f65957eb609f683bfeb70f0d17cac4be9a9c
+generated: "2026-04-01T23:31:38.808533+03:00"
