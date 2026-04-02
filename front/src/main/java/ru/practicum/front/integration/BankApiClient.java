@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
@@ -28,7 +29,7 @@ import java.time.LocalDate;
 public class BankApiClient {
 
     private final ApiClientProperties properties;
-    private final OAuth2AuthorizedClientService authorizedClientService;
+    private final OAuth2AuthorizedClientManager authorizedClientManager;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AccountResponse getCurrentAccount() {
@@ -111,9 +112,10 @@ public class BankApiClient {
             throw new IllegalStateException("OAuth2 authentication is required");
         }
 
-        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
-                oauth2Token.getAuthorizedClientRegistrationId(),
-                oauth2Token.getName()
+        OAuth2AuthorizedClient client = authorizedClientManager.authorize(
+                OAuth2AuthorizeRequest.withClientRegistrationId(oauth2Token.getAuthorizedClientRegistrationId())
+                        .principal(oauth2Token)
+                        .build()
         );
 
         if (client == null || client.getAccessToken() == null || client.getAccessToken().getTokenValue() == null) {

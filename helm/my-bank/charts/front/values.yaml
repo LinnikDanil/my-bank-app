@@ -5,7 +5,7 @@ app:
 
   image:
     repository: front-app
-    tag: latest
+    tag: 1.1.0
     pullPolicy: IfNotPresent
 
   service:

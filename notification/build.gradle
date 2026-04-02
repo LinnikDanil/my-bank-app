@@ -1,4 +1,4 @@
-version = '0.0.1'
+version = '1.1.0'
 description = 'notification'
 
 springBoot {
@@ -13,7 +13,7 @@ configurations.configureEach {
 
 dependencies {
     implementation project(':common')
-    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-liquibase'
     implementation 'org.postgresql:postgresql:42.7.10'

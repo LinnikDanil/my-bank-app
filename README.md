@@ -96,11 +96,11 @@ bash ./gradlew clean build
 ### 4.2. Сборка Docker-образов
 
 ```bash
-docker build -t front-app:latest ./front
-docker build -t account-app:latest ./account
-docker build -t cash-app:latest ./cash
-docker build -t transfer-app:latest ./transfer
-docker build -t notification-app:latest ./notification
+docker build -t front-app:1.1.0 ./front
+docker build -t account-app:1.1.0 ./account
+docker build -t cash-app:1.1.0 ./cash
+docker build -t transfer-app:1.1.0 ./transfer
+docker build -t notification-app:1.1.0 ./notification
 ```
 
 ### 4.3. Установка ingress-nginx
@@ -216,7 +216,6 @@ OpenAPI-спецификации лежат в директории [`openapi`](
 - `account-internal-openapi.yaml`
 - `cash-openapi.yaml`
 - `transfer-openapi.yaml`
-- `notification-openapi.yaml`
 
 Генерация серверных/клиентских интерфейсов выполняется в Gradle-задачах модулей и автоматически привязана к `compileJava`.
 

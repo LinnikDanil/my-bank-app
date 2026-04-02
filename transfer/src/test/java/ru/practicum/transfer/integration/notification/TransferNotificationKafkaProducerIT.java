@@ -57,7 +57,7 @@ class TransferNotificationKafkaProducerIT {
     @DisplayName("sends TRANSFER_COMPLETED event to Kafka")
     void test1() throws Exception {
         try (var consumerForTest = new DefaultKafkaConsumerFactory<>(
-                KafkaTestUtils.consumerProps("transfer-it", "true", embeddedKafkaBroker),
+                KafkaTestUtils.consumerProps(embeddedKafkaBroker, "transfer-it", true),
                 new StringDeserializer(),
                 new StringDeserializer()
         ).createConsumer()) {

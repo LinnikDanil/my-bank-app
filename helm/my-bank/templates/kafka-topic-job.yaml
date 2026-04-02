@@ -1,3 +1,4 @@
+{{- if .Values.kafkaTopic.initJob.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,7 +13,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: create-topic
-          image: bitnami/kafka:4.0
+          image: "{{ .Values.kafkaTopic.initJob.image.repository }}:{{ .Values.kafkaTopic.initJob.image.tag }}"
+          imagePullPolicy: {{ .Values.kafkaTopic.initJob.image.pullPolicy }}
           command: ["/bin/bash", "-ec"]
           args:
             - |
@@ -26,10 +28,11 @@ spec:
                 sleep 2
               done
 
-              kafka-topics.sh \
+              /opt/kafka/bin/kafka-topics.sh \
                 --bootstrap-server "${BROKER_HOST}:${BROKER_PORT}" \
                 --create \
                 --if-not-exists \
                 --topic "{{ .Values.kafkaTopic.name }}" \
                 --partitions {{ .Values.kafkaTopic.partitions }} \
                 --replication-factor {{ .Values.kafkaTopic.replicationFactor }}
+{{- end }}

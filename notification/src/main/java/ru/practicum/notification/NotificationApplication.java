@@ -3,7 +3,7 @@ package ru.practicum.notification;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "ru.practicum")
+@SpringBootApplication
 public class NotificationApplication {
 
     static void main(String[] args) {
