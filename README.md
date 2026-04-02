@@ -1,6 +1,6 @@
 # My Bank App
 
-Микросервисное приложение «Банк» для проектной работы 10 спринта.
+Микросервисное приложение «Банк» для проектной работы 11 спринта.
 
 Проект реализует:
 - фронт с одной HTML-страницей (`front`),
@@ -11,6 +11,7 @@
 - OAuth 2.0 авторизацию через Keycloak,
 - Service Discovery через Kubernetes Service DNS,
 - конфигурацию через Kubernetes ConfigMap/Secret,
+- взаимодействие сервисов уведомлений через Apache Kafka,
 - развёртывание через Helm (umbrella chart + сабчарты).
 
 ## 1. Архитектура
@@ -23,7 +24,8 @@
 | `account` | Данные аккаунта, баланс, список получателей | `8082` |
 | `cash` | Пополнение/снятие со счёта | `8083` |
 | `transfer` | Переводы между пользователями | `8084` |
-| `notification` | Обработка событий уведомлений | `8085` |
+| `notification` | Обработка событий уведомлений из Kafka | `8085` |
+| `kafka` | Брокер сообщений | `9092` |
 | `keycloak` | OAuth 2.0 / OIDC сервер авторизации | `80` (svc), `8080` (container) |
 | `postgresql` | Персистентная БД аккаунтов/Keycloak | `5432` |
 | `ingress-nginx` | Внешний вход в приложение (Ingress) | `80/443` |
@@ -43,11 +45,13 @@ flowchart LR
   Cash -->|Client Credentials + REST| Account
   Transfer -->|Client Credentials + REST| Account
 
-  Account -->|Client Credentials + REST| Notification[Notification]
-  Cash -->|Client Credentials + REST| Notification
-  Transfer -->|Client Credentials + REST| Notification
+  Account -->|Kafka event| Kafka[(Kafka)]
+  Cash -->|Kafka event| Kafka
+  Transfer -->|Kafka event| Kafka
+  Kafka -->|consume| Notification[Notification]
 
   Account --> DB[(PostgreSQL)]
+  Notification --> DB
   Keycloak --> DB
 ```
 
@@ -55,6 +59,7 @@ flowchart LR
 
 - Java 25, Spring Boot, Spring Security
 - OAuth2/OIDC (Keycloak)
+- Spring Kafka
 - Spring Data JPA + Hibernate
 - Liquibase
 - PostgreSQL
@@ -110,6 +115,9 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-ngin
 ### 4.4. Деплой приложения
 
 ```bash
+helm repo add kafka-repo https://helm-charts.itboon.top/kafka
+helm repo update
+
 for chart in front account cash transfer notification; do
   helm dependency update helm/my-bank/charts/$chart
 done
@@ -243,7 +251,7 @@ helm test my-bank
 - `transfer/Dockerfile`
 - `notification/Dockerfile`
 
-Базовый образ: `amazoncorretto:25-alpine-jdk`.
+Dockerfile сервисов выполнены в формате multi-stage build.
 
 ## 11. Конфигурация и секреты
 
@@ -262,7 +270,13 @@ helm test my-bank
 
 В кластере они рендерятся в `ConfigMap` и `Secret` каждого сабчарта.
 
-## 12. Структура проекта
+## 12. Kafka и DLQ
+
+- События уведомлений публикуются в Kafka-топик `notification-events`.
+- `notification` обрабатывает сообщения как Kafka consumer (стратегия `at least once`).
+- При ошибках обработки сообщения сохраняются в DLQ в БД (`notification_app.dead_letter_queue`).
+
+## 13. Структура проекта
 
 ```text
 my-bank-app/

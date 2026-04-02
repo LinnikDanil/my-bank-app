@@ -13,19 +13,19 @@ spring:
     hibernate:
       ddl-auto: validate
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
-      group-id: ${NOTIFICATION_CONSUMER_GROUP_ID:notification-service}
+      group-id: ${NOTIFICATION_CONSUMER_GROUP_ID}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false
+      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT}
     listener:
-      ack-mode: manual_immediate
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE}
 
 spring.main:
   web-application-type: none
 
 integration:
   notification:
-    topic: ${NOTIFICATION_TOPIC:notification-events}
+    topic: ${NOTIFICATION_TOPIC}
