@@ -187,6 +187,10 @@ services:
       - "8085:8085"
     environment:
       SERVER_PORT: "8085"
+      DATASOURCE_SCHEMA_NAME: notification_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bank-db:5432/bank?currentSchema=notification_app
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       NOTIFICATION_TOPIC: notification-events
       NOTIFICATION_CONSUMER_GROUP_ID: notification-service

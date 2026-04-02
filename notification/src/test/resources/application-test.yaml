@@ -1,4 +1,9 @@
 SERVER_PORT: 0
 
-NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/test
-NOTIFICATION_JWT_JWK_SET_URI: http://localhost:8080/realms/test/protocol/openid-connect/certs
+SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test
+SPRING_DATASOURCE_USERNAME: test
+SPRING_DATASOURCE_PASSWORD: test
+DATASOURCE_SCHEMA_NAME: notification_app
+KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+NOTIFICATION_TOPIC: notification-events
+NOTIFICATION_CONSUMER_GROUP_ID: notification-service-test

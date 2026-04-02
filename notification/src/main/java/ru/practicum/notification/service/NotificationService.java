@@ -1,6 +1,6 @@
 package ru.practicum.notification.service;
 
-import ru.practicum.notification.domain.NotificationEvent;
+import ru.practicum.common.notification.NotificationEvent;
 
 /**
  * Контракт обработки событий уведомлений.

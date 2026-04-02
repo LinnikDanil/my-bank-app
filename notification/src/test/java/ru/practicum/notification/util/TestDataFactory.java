@@ -1,8 +1,8 @@
 package ru.practicum.notification.util;
 
-import ru.practicum.notification.domain.NotificationEvent;
-import ru.practicum.notification.domain.NotificationEventPayload;
-import ru.practicum.notification.domain.NotificationEventType;
+import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.notification.NotificationEventPayload;
+import ru.practicum.common.notification.NotificationEventType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,52 +17,43 @@ public final class TestDataFactory {
     }
 
     public static NotificationEvent accountUpdatedEvent() {
-        return new NotificationEvent(
-                UUID.randomUUID(),
-                NotificationEventType.ACCOUNT_UPDATED,
-                OffsetDateTime.now(ZoneOffset.UTC),
-                List.of("ivanivanov"),
-                new NotificationEventPayload()
+        return NotificationEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(NotificationEventType.ACCOUNT_UPDATED)
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                .recipients(List.of("ivanivanov"))
+                .payload(NotificationEventPayload.builder()
                         .username("ivanivanov")
                         .fullName("Ivan Ivanov")
                         .dateOfBirth(LocalDate.of(2001, 5, 10))
-        );
+                        .build())
+                .build();
     }
 
     public static NotificationEvent cashDepositEvent() {
-        return new NotificationEvent(
-                UUID.randomUUID(),
-                NotificationEventType.CASH_DEPOSIT,
-                OffsetDateTime.now(ZoneOffset.UTC),
-                List.of("ivanivanov"),
-                new NotificationEventPayload()
+        return NotificationEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(NotificationEventType.CASH_DEPOSIT)
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                .recipients(List.of("ivanivanov"))
+                .payload(NotificationEventPayload.builder()
                         .username("ivanivanov")
                         .amount(new BigDecimal("100.00"))
-        );
-    }
-
-    public static NotificationEvent cashWithdrawEvent() {
-        return new NotificationEvent(
-                UUID.randomUUID(),
-                NotificationEventType.CASH_WITHDRAW,
-                OffsetDateTime.now(ZoneOffset.UTC),
-                List.of("ivanivanov"),
-                new NotificationEventPayload()
-                        .username("ivanivanov")
-                        .amount(new BigDecimal("50.00"))
-        );
+                        .build())
+                .build();
     }
 
     public static NotificationEvent transferCompletedEvent() {
-        return new NotificationEvent(
-                UUID.randomUUID(),
-                NotificationEventType.TRANSFER_COMPLETED,
-                OffsetDateTime.now(ZoneOffset.UTC),
-                List.of("ivanivanov", "petrpetrov"),
-                new NotificationEventPayload()
+        return NotificationEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(NotificationEventType.TRANSFER_COMPLETED)
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                .recipients(List.of("ivanivanov", "petrpetrov"))
+                .payload(NotificationEventPayload.builder()
                         .usernameFrom("ivanivanov")
                         .usernameTo("petrpetrov")
                         .amount(new BigDecimal("250.00"))
-        );
+                        .build())
+                .build();
     }
 }

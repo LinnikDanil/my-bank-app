@@ -96,6 +96,9 @@ notification:
       port: 8085
     env:
       SERVER_PORT: "8085"
+      DATASOURCE_SCHEMA_NAME: notification_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=notification_app
+      SPRING_DATASOURCE_USERNAME: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
       NOTIFICATION_TOPIC: notification-events
       NOTIFICATION_CONSUMER_GROUP_ID: notification-service
@@ -141,6 +144,7 @@ postgresql:
       scripts:
         01-create-schema.sql: |
           CREATE SCHEMA IF NOT EXISTS bank_app;
+          CREATE SCHEMA IF NOT EXISTS notification_app;
 
 keycloak:
   image:
