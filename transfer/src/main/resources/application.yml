@@ -17,6 +17,15 @@ spring:
         provider:
           keycloak:
             token-uri: ${TRANSFER_OAUTH2_TOKEN_URI}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
 
 server:
   port: ${SERVER_PORT}
@@ -27,7 +36,7 @@ integration:
   account:
     base-url: ${ACCOUNT_BASE_URL}
   notification:
-    base-url: ${NOTIFICATION_BASE_URL}
+    topic: ${NOTIFICATION_TOPIC:notification-events}
 
 resilience4j:
   circuitbreaker:

@@ -6,7 +6,6 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.xml
     default-schema: ${DATASOURCE_SCHEMA_NAME}
@@ -16,25 +15,22 @@ spring:
         jwt:
           issuer-uri: ${ACCOUNT_JWT_ISSUER_URI}
           jwk-set-uri: ${ACCOUNT_JWT_JWK_SET_URI}
-      client:
-        registration:
-          account-service-client:
-            provider: keycloak
-            authorization-grant-type: client_credentials
-            client-id: ${ACCOUNT_CLIENT_ID}
-            client-secret: ${ACCOUNT_CLIENT_SECRET}
-        provider:
-          keycloak:
-            token-uri: ${ACCOUNT_OAUTH2_TOKEN_URI}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
 
 server:
   port: ${SERVER_PORT}
 
 integration:
-  oauth2:
-    registration-id: ${ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID}
   notification:
-    base-url: ${NOTIFICATION_BASE_URL}
+    topic: ${NOTIFICATION_TOPIC:notification-events}
 
 resilience4j:
   circuitbreaker:

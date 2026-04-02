@@ -11,12 +11,12 @@ dependencies {
     implementation project(':common')
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.kafka:spring-kafka'
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.4.0'
-    }
+}
 
 def transferServerOut = layout.buildDirectory.dir("generated/transfer-server")
 def accountClientOut = layout.buildDirectory.dir("generated/account-client")
-def notificationClientOut = layout.buildDirectory.dir("generated/notification-client")
 
 tasks.register("generateTransferServerOpenApi", GenerateTask) {
     generatorName.set("spring")
@@ -62,32 +62,15 @@ tasks.register("generateAccountClientOpenApi", GenerateTask) {
     ])
 }
 
-tasks.register("generateNotificationClientOpenApi", GenerateTask) {
-    generatorName.set("java")
-    inputSpec.set("$rootDir/openapi/notification-openapi.yaml")
-    outputDir.set(notificationClientOut.map { it.asFile.absolutePath })
-
-    modelPackage.set("ru.practicum.transfer.integration.notification.domain")
-    apiPackage.set("ru.practicum.transfer.integration.notification.api")
-    invokerPackage.set("ru.practicum.transfer.integration.notification.client")
-
-    configOptions.set([
-            library        : "restclient",
-            useJakartaEe   : "true",
-            openApiNullable: "false"
-    ])
-}
-
 sourceSets {
     main {
         java {
             srcDir(layout.buildDirectory.dir("generated/transfer-server/src/main/java"))
             srcDir(layout.buildDirectory.dir("generated/account-client/src/main/java"))
-            srcDir(layout.buildDirectory.dir("generated/notification-client/src/main/java"))
         }
     }
 }
 
 tasks.named("compileJava") {
-    dependsOn("generateTransferServerOpenApi", "generateAccountClientOpenApi", "generateNotificationClientOpenApi")
+    dependsOn("generateTransferServerOpenApi", "generateAccountClientOpenApi")
 }

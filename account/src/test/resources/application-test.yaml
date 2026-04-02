@@ -7,8 +7,5 @@ SPRING_DATASOURCE_PASSWORD: test
 DATASOURCE_SCHEMA_NAME: public
 ACCOUNT_JWT_ISSUER_URI: http://localhost:8080/realms/test
 ACCOUNT_JWT_JWK_SET_URI: http://localhost:8080/realms/test/protocol/openid-connect/certs
-ACCOUNT_CLIENT_ID: account-service
-ACCOUNT_CLIENT_SECRET: test-secret
-ACCOUNT_OAUTH2_TOKEN_URI: http://localhost:8080/realms/test/protocol/openid-connect/token
-ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
-NOTIFICATION_BASE_URL: http://localhost:9999
+KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+NOTIFICATION_TOPIC: notification-events
