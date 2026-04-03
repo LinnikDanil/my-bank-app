@@ -37,7 +37,7 @@ class NotificationKafkaListenerTest {
 
     @Test
     @DisplayName("acks message when deserialization and processing succeeded")
-    void test1() {
+    void acksMessageWhenDeserializationAndProcessingSucceeded() {
         NotificationKafkaListener listener = new NotificationKafkaListener(notificationService, objectMapper);
         var record = new org.apache.kafka.clients.consumer.ConsumerRecord<>(
                 "notification-events", 0, 0L, "k1", buildEventJson()
@@ -51,7 +51,7 @@ class NotificationKafkaListenerTest {
 
     @Test
     @DisplayName("throws IllegalArgumentException on malformed json")
-    void test2() {
+    void throwsIllegalargumentexceptionOnMalformedJson() {
         NotificationKafkaListener listener = new NotificationKafkaListener(notificationService, objectMapper);
         var record = new org.apache.kafka.clients.consumer.ConsumerRecord<>(
                 "notification-events", 0, 0L, "k1", "{invalid"
@@ -64,7 +64,7 @@ class NotificationKafkaListenerTest {
 
     @Test
     @DisplayName("rethrows runtime exception from service")
-    void test3() {
+    void rethrowsRuntimeExceptionFromService() {
         NotificationKafkaListener listener = new NotificationKafkaListener(notificationService, objectMapper);
         var record = new org.apache.kafka.clients.consumer.ConsumerRecord<>(
                 "notification-events", 0, 0L, "k1", buildEventJson()

@@ -66,12 +66,21 @@ public class CashNotificationServiceImpl implements CashNotificationService {
 
         try {
             String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson).get();
-            log.info("Событие отправлено в Kafka: eventId={}, type={}", event.getEventId(), eventType);
+            kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            log.error("Не удалось отправить событие в Kafka: eventId={}, type={}",
+                                    event.getEventId(), eventType, ex);
+                            return;
+                        }
+                        log.info("Событие отправлено в Kafka: eventId={}, type={}, partition={}, offset={}",
+                                event.getEventId(),
+                                eventType,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    });
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Не удалось сериализовать notification-событие", e);
-        } catch (Exception e) {
-            throw new IllegalStateException("Не удалось отправить notification-событие в Kafka", e);
         }
     }
 

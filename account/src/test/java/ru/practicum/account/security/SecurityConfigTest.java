@@ -21,7 +21,7 @@ class SecurityConfigTest {
 
         @Test
         @DisplayName("extracts authorities from realm and resource claims")
-        void test1() {
+        void extractsAuthoritiesFromRealmAndResourceClaims() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("realm_access", Map.of("roles", List.of("USER", "ADMIN")))
@@ -41,7 +41,7 @@ class SecurityConfigTest {
 
         @Test
         @DisplayName("ignores blank roles and removes duplicates")
-        void test2() {
+        void ignoresBlankRolesAndRemovesDuplicates() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("realm_access", Map.of("roles", List.of("USER", "USER", "   ")))
@@ -62,7 +62,7 @@ class SecurityConfigTest {
 
         @Test
         @DisplayName("handles missing claims")
-        void test3() {
+        void handlesMissingClaims() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("sub", "service-account")

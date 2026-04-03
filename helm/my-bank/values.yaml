@@ -7,7 +7,7 @@ front:
     replicaCount: 1
     image:
       repository: front-app
-      tag: 1.1.0
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8086
@@ -28,7 +28,7 @@ account:
     replicaCount: 1
     image:
       repository: account-app
-      tag: 1.1.0
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8082
@@ -59,7 +59,7 @@ cash:
     replicaCount: 1
     image:
       repository: cash-app
-      tag: 1.1.0
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8083
@@ -99,12 +99,15 @@ transfer:
     replicaCount: 1
     image:
       repository: transfer-app
-      tag: 1.1.0
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8084
     env:
       SERVER_PORT: "8084"
+      DATASOURCE_SCHEMA_NAME: transfer_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=transfer_app
+      SPRING_DATASOURCE_USERNAME: postgres
       ACCOUNT_BASE_URL: http://account:8082
       KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
       NOTIFICATION_TOPIC: notification-events
@@ -132,6 +135,9 @@ transfer:
       TRANSFER_CLIENT_ID: transfer-service
       TRANSFER_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
       TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+      TRANSFER_OUTBOX_POLL_DELAY_MS: "2000"
+      TRANSFER_OUTBOX_RETRY_DELAY_MS: "5000"
+      TRANSFER_OUTBOX_MAX_ATTEMPTS: "10"
 
 notification:
   app:
@@ -139,9 +145,10 @@ notification:
     replicaCount: 1
     image:
       repository: notification-app
-      tag: 1.1.0
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
+      enabled: false
       port: 8085
     env:
       SERVER_PORT: "8085"
@@ -191,6 +198,13 @@ postgresql:
     username: postgres
     database: bank
   primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 384Mi
     persistence:
       enabled: true
       size: 2Gi
@@ -199,6 +213,7 @@ postgresql:
         01-create-schema.sql: |
           CREATE SCHEMA IF NOT EXISTS bank_app;
           CREATE SCHEMA IF NOT EXISTS notification_app;
+          CREATE SCHEMA IF NOT EXISTS transfer_app;
 
 keycloak:
   image:
@@ -217,9 +232,18 @@ keycloak:
     port: 5432
     user: postgres
     database: bank
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 768Mi
   httpRelativePath: /
   extraStartupArgs: "--import-realm"
   extraEnvVars:
+    - name: JAVA_OPTS_KC_HEAP
+      value: "-Xms128m -Xmx512m"
     - name: KC_HOSTNAME
       value: localhost
     - name: KC_HOSTNAME_STRICT
@@ -265,8 +289,16 @@ kafka:
     pullPolicy: IfNotPresent
   broker:
     replicaCount: 1
+    heapOpts: "-Xms256m -Xmx512m"
     config:
       num.partitions: "3"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 768Mi
     persistence:
       enabled: true
       size: 2Gi

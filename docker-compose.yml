@@ -3,6 +3,7 @@ services:
     container_name: bank-db
     image: postgres:17.5
     restart: always
+    mem_limit: 384m
     env_file:
       - ./env/bank-db.env
     ports:
@@ -16,8 +17,11 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     command: ["start-dev", "--import-realm"]
+    mem_limit: 768m
     env_file:
       - ./env/keycloak.env
+    environment:
+      JAVA_OPTS_KC_HEAP: "-Xms128m -Xmx512m"
     ports:
       - "8080:8080"
     volumes:
@@ -34,10 +38,13 @@ services:
     container_name: kafka
     image: bitnamilegacy/kafka:4.0.0-debian-12-r3
     restart: always
+    mem_limit: 768m
     ports:
       - "9092:9092"
     env_file:
       - ./env/kafka.env
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     volumes:
       - kafka-data:/bitnami/kafka
     networks:
@@ -46,10 +53,11 @@ services:
   front-app:
     container_name: front-app
     build:
-      context: ./front
-      dockerfile: Dockerfile
-    image: front-app:1.1.0
+      context: .
+      dockerfile: front/Dockerfile
+    image: front-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8086:8086"
     env_file:
@@ -63,10 +71,11 @@ services:
   account-app:
     container_name: account-app
     build:
-      context: ./account
-      dockerfile: Dockerfile
-    image: account-app:1.1.0
+      context: .
+      dockerfile: account/Dockerfile
+    image: account-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8082:8082"
     env_file:
@@ -84,10 +93,11 @@ services:
   cash-app:
     container_name: cash-app
     build:
-      context: ./cash
-      dockerfile: Dockerfile
-    image: cash-app:1.1.0
+      context: .
+      dockerfile: cash/Dockerfile
+    image: cash-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8083:8083"
     env_file:
@@ -103,10 +113,11 @@ services:
   transfer-app:
     container_name: transfer-app
     build:
-      context: ./transfer
-      dockerfile: Dockerfile
-    image: transfer-app:1.1.0
+      context: .
+      dockerfile: transfer/Dockerfile
+    image: transfer-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8084:8084"
     env_file:
@@ -122,10 +133,11 @@ services:
   notification-app:
     container_name: notification-app
     build:
-      context: ./notification
-      dockerfile: Dockerfile
-    image: notification-app:1.1.0
+      context: .
+      dockerfile: notification/Dockerfile
+    image: notification-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8085:8085"
     env_file:

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.common.notification.NotificationEvent;
 import ru.practicum.common.notification.NotificationEventPayload;
 import ru.practicum.common.notification.NotificationEventType;
+import ru.practicum.transfer.domain.exception.UpstreamServiceException;
 import ru.practicum.transfer.integration.notification.service.TransferNotificationService;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -55,12 +57,23 @@ public class TransferNotificationServiceImpl implements TransferNotificationServ
 
         try {
             String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson).get();
-            log.info("Событие отправлено в Kafka: eventId={}, type={}", event.getEventId(), eventType);
+            var sendResult = kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson).get();
+            if (sendResult != null && sendResult.getRecordMetadata() != null) {
+                log.info("Событие отправлено в Kafka: eventId={}, type={}, partition={}, offset={}",
+                        event.getEventId(),
+                        eventType,
+                        sendResult.getRecordMetadata().partition(),
+                        sendResult.getRecordMetadata().offset());
+            } else {
+                log.info("Событие отправлено в Kafka: eventId={}, type={}", event.getEventId(), eventType);
+            }
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Не удалось сериализовать notification-событие", e);
-        } catch (Exception e) {
-            throw new IllegalStateException("Не удалось отправить notification-событие в Kafka", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new UpstreamServiceException("Отправка notification-события была прервана");
+        } catch (ExecutionException e) {
+            throw new UpstreamServiceException("Не удалось отправить notification-событие в Kafka");
         }
     }
 

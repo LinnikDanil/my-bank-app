@@ -55,7 +55,7 @@ class CashNotificationKafkaProducerIT {
 
     @Test
     @DisplayName("sends CASH_DEPOSIT event to Kafka")
-    void test1() throws Exception {
+    void sendsCashDepositEventToKafka() throws Exception {
         try (var consumerForTest = new DefaultKafkaConsumerFactory<>(
                 KafkaTestUtils.consumerProps(embeddedKafkaBroker, "cash-it", true),
                 new StringDeserializer(),

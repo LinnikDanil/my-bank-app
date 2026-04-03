@@ -16,19 +16,19 @@ class NotificationServiceImplTest {
 
         @Test
         @DisplayName("logs account updated")
-        void test1() {
+        void logsAccountUpdated() {
             notificationService.processEvent(TestDataFactory.accountUpdatedEvent());
         }
 
         @Test
         @DisplayName("logs cash deposit")
-        void test2() {
+        void logsCashDeposit() {
             notificationService.processEvent(TestDataFactory.cashDepositEvent());
         }
 
         @Test
         @DisplayName("logs transfer completed")
-        void test3() {
+        void logsTransferCompleted() {
             notificationService.processEvent(TestDataFactory.transferCompletedEvent());
         }
     }

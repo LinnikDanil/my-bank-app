@@ -1,6 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
-version = '1.1.0'
+version = '1.2.0'
 description = 'transfer'
 
 springBoot {
@@ -12,6 +12,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-kafka'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-liquibase'
+    implementation 'org.postgresql:postgresql:42.7.10'
     implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
 }
 

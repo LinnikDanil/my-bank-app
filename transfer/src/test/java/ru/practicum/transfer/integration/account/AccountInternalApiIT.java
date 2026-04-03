@@ -21,7 +21,7 @@ class AccountInternalApiIT {
 
     @Test
     @DisplayName("internalWithdraw")
-    void test1() {
+    void internalWithdraw_returnsBalanceResponse() {
         var builder = ApiClient.buildRestClientBuilder();
         var server = MockRestServiceServer.bindTo(builder).build();
 

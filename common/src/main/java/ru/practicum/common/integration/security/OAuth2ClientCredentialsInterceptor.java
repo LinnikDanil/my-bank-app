@@ -13,14 +13,12 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 /**
  * Добавляет bearer-токен, полученный по client_credentials, в исходящие HTTP-запросы.
  */
-@Component
 @ConditionalOnBean(OAuth2AuthorizedClientManager.class)
 @ConditionalOnProperty(name = "integration.oauth2.registration-id")
 public class OAuth2ClientCredentialsInterceptor implements ClientHttpRequestInterceptor {

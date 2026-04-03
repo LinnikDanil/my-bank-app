@@ -29,7 +29,7 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("returns preferred_username")
-        void test1() {
+        void returnsPreferredUsername() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("preferred_username", "ivanivanov")
@@ -44,7 +44,7 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("returns username fallback")
-        void test2() {
+        void returnsUsernameFallback() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("preferred_username", "   ")
@@ -59,14 +59,14 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("throws when authentication is missing")
-        void test3() {
+        void throwsWhenAuthenticationIsMissing() {
             assertThatExceptionOfType(InvalidUsernameException.class)
                     .isThrownBy(currentUsernameProvider::requireUsername);
         }
 
         @Test
         @DisplayName("throws when principal is not jwt")
-        void test4() {
+        void throwsWhenPrincipalIsNotJwt() {
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken("user", "password")
             );
@@ -77,7 +77,7 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("throws when claims are blank")
-        void test5() {
+        void throwsWhenClaimsAreBlank() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("preferred_username", "   ")

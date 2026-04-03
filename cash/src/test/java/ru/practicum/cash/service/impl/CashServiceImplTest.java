@@ -41,7 +41,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void deposit_returnsUpdatedBalance_whenRequestIsValid() {
             var request = TestDataFactory.createRequest("250.50");
             var balance = TestDataFactory.createBalanceResponse("1250.50");
 
@@ -57,7 +57,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("invalid username")
-        void test2() {
+        void deposit_throwsInvalidUsernameException_whenUsernameIsBlank() {
             assertThatExceptionOfType(InvalidUsernameException.class)
                     .isThrownBy(() -> cashService.deposit(" ", TestDataFactory.createRequest("10.00")));
 
@@ -66,7 +66,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("request is null")
-        void test3() {
+        void deposit_throwsInvalidCashOperationRequestException_whenRequestIsNull() {
             assertThatExceptionOfType(InvalidCashOperationRequestException.class)
                     .isThrownBy(() -> cashService.deposit(USERNAME, null));
 
@@ -75,7 +75,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("amount must be positive")
-        void test4() {
+        void deposit_throwsInvalidAmountException_whenAmountIsNotPositive() {
             assertThatExceptionOfType(InvalidAmountException.class)
                     .isThrownBy(() -> cashService.deposit(USERNAME, TestDataFactory.createRequest("0.00")));
 
@@ -89,7 +89,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void withdraw_returnsUpdatedBalance_whenRequestIsValid() {
             var request = TestDataFactory.createRequest("125.00");
             var balance = TestDataFactory.createBalanceResponse("875.00");
 
@@ -105,7 +105,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("request is null")
-        void test2() {
+        void withdraw_throwsInvalidCashOperationRequestException_whenRequestIsNull() {
             assertThatExceptionOfType(InvalidCashOperationRequestException.class)
                     .isThrownBy(() -> cashService.withdraw(USERNAME, null));
 
@@ -114,7 +114,7 @@ class CashServiceImplTest {
 
         @Test
         @DisplayName("amount must be positive")
-        void test3() {
+        void withdraw_throwsInvalidAmountException_whenAmountIsNotPositive() {
             assertThatExceptionOfType(InvalidAmountException.class)
                     .isThrownBy(() -> cashService.withdraw(USERNAME, TestDataFactory.createRequest("-1.00")));
 

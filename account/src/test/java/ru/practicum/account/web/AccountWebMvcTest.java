@@ -64,7 +64,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("get current account")
-        void test1() throws Exception {
+        void getCurrentAccount() throws Exception {
             var response = new AccountResponse(
                     USERNAME,
                     "Ivan Ivanov",
@@ -87,7 +87,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("get recipients")
-        void test2() throws Exception {
+        void getRecipients() throws Exception {
             var recipients = new RecipientPageResponse(
                     List.of(
                             new RecipientItem("petrpetrov", "Petr Petrov"),
@@ -116,7 +116,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("get recipients validation error")
-        void test3() throws Exception {
+        void getRecipientsValidationError() throws Exception {
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
 
             mockMvc.perform(get("/api/v1/accounts/recipients")
@@ -131,7 +131,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("update current account")
-        void test4() throws Exception {
+        void updateCurrentAccount() throws Exception {
             var response = new AccountResponse(
                     USERNAME,
                     "Ivan Sidorov",
@@ -154,7 +154,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("update current account validation error")
-        void test5() throws Exception {
+        void updateCurrentAccountValidationError() throws Exception {
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
 
             mockMvc.perform(put("/api/v1/accounts/me")
@@ -169,7 +169,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("account not found mapped to 404")
-        void test6() throws Exception {
+        void accountNotFoundMappedTo404() throws Exception {
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
             when(accountService.getCurrentAccount(USERNAME)).thenThrow(new AccountNotFoundException(USERNAME));
 
@@ -186,7 +186,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("internal deposit")
-        void test1() throws Exception {
+        void internalDeposit() throws Exception {
             var request = new MoneyAmountRequest(new BigDecimal("250.00"));
             var response = new BalanceResponse(USERNAME, new BigDecimal("1250.00"));
 
@@ -205,7 +205,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("internal withdraw insufficient funds mapped to 409")
-        void test2() throws Exception {
+        void internalWithdrawInsufficientFundsMappedTo409() throws Exception {
             var request = new MoneyAmountRequest(new BigDecimal("5000.00"));
 
             when(accountService.withdraw(eq(USERNAME), any(MoneyAmountRequest.class)))
@@ -221,7 +221,7 @@ class AccountWebMvcTest {
 
         @Test
         @DisplayName("internal deposit validation error")
-        void test3() throws Exception {
+        void internalDepositValidationError() throws Exception {
             mockMvc.perform(post("/internal/v1/accounts/{username}/deposit", "usr")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"amount\":100}"))

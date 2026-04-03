@@ -1,6 +1,14 @@
 spring:
   application:
     name: transfer
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+    default-schema: ${DATASOURCE_SCHEMA_NAME}
   security:
     oauth2:
       resourceserver:
@@ -67,3 +75,9 @@ resilience4j:
       notificationService:
         maxAttempts: ${RESILIENCE4J_NOTIFICATION_RETRY_MAX_ATTEMPTS}
         waitDuration: ${RESILIENCE4J_NOTIFICATION_RETRY_WAIT_DURATION}
+
+transfer:
+  outbox:
+    poll-delay-ms: ${TRANSFER_OUTBOX_POLL_DELAY_MS:2000}
+    retry-delay-ms: ${TRANSFER_OUTBOX_RETRY_DELAY_MS:5000}
+    max-attempts: ${TRANSFER_OUTBOX_MAX_ATTEMPTS:10}

@@ -1,1 +1,3 @@
 ru.practicum.common.config.CommonJacksonAutoConfiguration
+ru.practicum.common.config.CommonWebLoggingAutoConfiguration
+ru.practicum.common.config.CommonSecurityAutoConfiguration

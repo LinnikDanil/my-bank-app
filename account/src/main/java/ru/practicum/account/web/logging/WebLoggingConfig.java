@@ -1,6 +1,7 @@
 package ru.practicum.account.web.logging;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -13,13 +14,15 @@ import ru.practicum.common.web.logging.ControllerLoggingInterceptor;
 @RequiredArgsConstructor
 public class WebLoggingConfig implements WebMvcConfigurer {
 
-    private final ControllerLoggingInterceptor controllerLoggingInterceptor;
+    private final ObjectProvider<ControllerLoggingInterceptor> controllerLoggingInterceptorProvider;
 
     /**
      * Подключает interceptor для всех endpoint сервиса.
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(controllerLoggingInterceptor).addPathPatterns("/**");
+        controllerLoggingInterceptorProvider.ifAvailable(
+                interceptor -> registry.addInterceptor(interceptor).addPathPatterns("/**")
+        );
     }
 }

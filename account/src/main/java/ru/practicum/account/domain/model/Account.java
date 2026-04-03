@@ -31,6 +31,6 @@ public class Account {
     @Column(name = "date_of_birth")
     LocalDate dateOfBirth;
 
-    @Column
+    @Column(precision = 19, scale = 2, nullable = false)
     BigDecimal balance;
 }

@@ -58,7 +58,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void getCurrentAccount_returnsMappedResponse_whenUserExists() {
             var account = TestDataFactory.createDefaultAccount();
             var expected = TestDataFactory.createAccountResponse(account);
 
@@ -74,7 +74,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("invalid username")
-        void test2() {
+        void getCurrentAccount_throwsInvalidUsernameException_whenUsernameIsBlank() {
             assertThatExceptionOfType(InvalidUsernameException.class)
                     .isThrownBy(() -> accountService.getCurrentAccount(" "));
 
@@ -83,7 +83,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("account not found")
-        void test3() {
+        void getCurrentAccount_throwsAccountNotFoundException_whenUserDoesNotExist() {
             when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
@@ -99,7 +99,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("ok and trims search")
-        void test1() {
+        void getRecipients_trimsSearchAndReturnsMappedPage() {
             var recipients = List.of(
                     TestDataFactory.createAccount("petrpetrov", "Petr Petrov", LocalDate.of(1999, 11, 20), new BigDecimal("1000.00")),
                     TestDataFactory.createAccount("annaivanova", "Anna Ivanova", LocalDate.of(1998, 1, 1), new BigDecimal("500.00"))
@@ -118,7 +118,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("blank search becomes null")
-        void test2() {
+        void getRecipients_usesFindByUsernameNot_whenSearchIsBlank() {
             var page = new PageImpl<Account>(List.of(), PageRequest.of(0, 20), 0);
             var expected = TestDataFactory.emptyRecipientPageResponse(0, 20);
 
@@ -133,7 +133,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("invalid pagination")
-        void test3() {
+        void getRecipients_throwsInvalidPaginationException_whenPagingParamsAreInvalid() {
             assertThatExceptionOfType(InvalidPaginationException.class)
                     .isThrownBy(() -> accountService.getRecipients(USERNAME, -1, 10, null));
             assertThatExceptionOfType(InvalidPaginationException.class)
@@ -146,7 +146,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("invalid username")
-        void test4() {
+        void getRecipients_throwsInvalidUsernameException_whenUsernameIsInvalid() {
             assertThatExceptionOfType(InvalidUsernameException.class)
                     .isThrownBy(() -> accountService.getRecipients(null, 0, 10, null));
 
@@ -160,7 +160,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void updateCurrentAccount_returnsUpdatedAccount_whenRequestIsValid() {
             var account = TestDataFactory.createDefaultAccount();
             var request = TestDataFactory.createAdultUpdateRequest();
             var saved = TestDataFactory.createAccount(USERNAME, request.getFullName(), request.getDateOfBirth(), account.getBalance());
@@ -179,7 +179,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("request is null")
-        void test2() {
+        void updateCurrentAccount_throwsInvalidUpdateAccountRequestException_whenRequestIsNull() {
             assertThatExceptionOfType(InvalidUpdateAccountRequestException.class)
                     .isThrownBy(() -> accountService.updateCurrentAccount(USERNAME, null));
 
@@ -188,7 +188,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("full name is blank")
-        void test3() {
+        void updateCurrentAccount_keepsCurrentFullName_whenProvidedFullNameIsBlank() {
             var account = TestDataFactory.createDefaultAccount();
             var request = new ru.practicum.account.domain.publicapi.UpdateAccountRequest()
                     .fullName("   ")
@@ -214,7 +214,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("user is younger than 18")
-        void test4() {
+        void updateCurrentAccount_throwsInvalidUpdateAccountRequestException_whenUserIsMinor() {
             var request = TestDataFactory.createMinorUpdateRequest();
 
             assertThatExceptionOfType(InvalidUpdateAccountRequestException.class)
@@ -225,7 +225,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("account not found")
-        void test5() {
+        void updateCurrentAccount_throwsAccountNotFoundException_whenAccountIsMissing() {
             when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
@@ -242,7 +242,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void deposit_returnsUpdatedBalance_whenRequestIsValid() {
             var account = TestDataFactory.createDefaultAccount();
             var request = TestDataFactory.createMoneyAmountRequest("250.50");
             var saved = TestDataFactory.createAccount(USERNAME, account.getFullName(), account.getDateOfBirth(), new BigDecimal("1250.50"));
@@ -260,7 +260,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("request is null")
-        void test2() {
+        void deposit_throwsInvalidMoneyAmountRequestException_whenRequestIsNull() {
             assertThatExceptionOfType(InvalidMoneyAmountRequestException.class)
                     .isThrownBy(() -> accountService.deposit(USERNAME, null));
 
@@ -269,7 +269,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("amount must be positive")
-        void test3() {
+        void deposit_throwsInvalidAmountException_whenAmountIsNotPositive() {
             assertThatExceptionOfType(InvalidAmountException.class)
                     .isThrownBy(() -> accountService.deposit(USERNAME, new ru.practicum.account.domain.internalapi.MoneyAmountRequest(BigDecimal.ZERO)));
             assertThatExceptionOfType(InvalidAmountException.class)
@@ -280,7 +280,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("account not found")
-        void test4() {
+        void deposit_throwsAccountNotFoundException_whenAccountIsMissing() {
             when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)
@@ -297,7 +297,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("ok")
-        void test1() {
+        void withdraw_returnsUpdatedBalance_whenRequestIsValid() {
             var account = TestDataFactory.createDefaultAccount();
             var request = TestDataFactory.createMoneyAmountRequest("125.00");
             var saved = TestDataFactory.createAccount(USERNAME, account.getFullName(), account.getDateOfBirth(), new BigDecimal("875.00"));
@@ -315,7 +315,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("insufficient funds")
-        void test2() {
+        void withdraw_throwsInsufficientFundsException_whenBalanceIsNotEnough() {
             var account = TestDataFactory.createDefaultAccount();
             when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.of(account));
 
@@ -328,7 +328,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("amount must be positive")
-        void test3() {
+        void withdraw_throwsInvalidAmountException_whenAmountIsNotPositive() {
             assertThatExceptionOfType(InvalidAmountException.class)
                     .isThrownBy(() -> accountService.withdraw(USERNAME, new ru.practicum.account.domain.internalapi.MoneyAmountRequest(BigDecimal.ZERO)));
 
@@ -337,7 +337,7 @@ class AccountServiceImplTest {
 
         @Test
         @DisplayName("account not found")
-        void test4() {
+        void withdraw_throwsAccountNotFoundException_whenAccountIsMissing() {
             when(accountRepository.findByUsernameForUpdate(USERNAME)).thenReturn(Optional.empty());
 
             assertThatExceptionOfType(AccountNotFoundException.class)

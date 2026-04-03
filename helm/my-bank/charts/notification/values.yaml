@@ -5,10 +5,11 @@ app:
 
   image:
     repository: notification-app
-    tag: 1.1.0
+    tag: 1.2.0
     pullPolicy: IfNotPresent
 
   service:
+    enabled: false
     port: 8085
 
   env: {}
@@ -34,4 +35,10 @@ app:
       timeoutSeconds: 3
       failureThreshold: 6
 
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi

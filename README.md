@@ -85,25 +85,21 @@ flowchart LR
 
 ## 4. Быстрый старт (Kubernetes + Helm)
 
-### 4.1. Сборка jar-файлов
+### 4.1. Сборка Docker-образов
+
+JAR-файлы собираются внутри multi-stage Dockerfile, поэтому отдельный `bash ./gradlew clean build` на хост-машине не нужен.
 
 Из корня проекта:
 
 ```bash
-bash ./gradlew clean build
+docker build -f front/Dockerfile -t front-app:1.2.0 .
+docker build -f account/Dockerfile -t account-app:1.2.0 .
+docker build -f cash/Dockerfile -t cash-app:1.2.0 .
+docker build -f transfer/Dockerfile -t transfer-app:1.2.0 .
+docker build -f notification/Dockerfile -t notification-app:1.2.0 .
 ```
 
-### 4.2. Сборка Docker-образов
-
-```bash
-docker build -t front-app:1.1.0 ./front
-docker build -t account-app:1.1.0 ./account
-docker build -t cash-app:1.1.0 ./cash
-docker build -t transfer-app:1.1.0 ./transfer
-docker build -t notification-app:1.1.0 ./notification
-```
-
-### 4.3. Установка ingress-nginx
+### 4.2. Установка ingress-nginx
 
 ```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -112,7 +108,7 @@ kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply 
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
-### 4.4. Деплой приложения
+### 4.3. Деплой приложения
 
 ```bash
 helm repo add kafka-repo https://helm-charts.itboon.top/kafka
@@ -127,7 +123,7 @@ helm upgrade --install my-bank helm/my-bank \
   -f helm/my-bank/values-secret.yaml
 ```
 
-### 4.5. Проверка статуса
+### 4.4. Проверка статуса
 
 ```bash
 kubectl get pods
@@ -138,7 +134,7 @@ kubectl get ingress
 Открыть:
 - Front UI: [http://localhost/](http://localhost/)
 
-### 4.6. Остановка
+### 4.5. Остановка
 
 ```bash
 helm uninstall my-bank

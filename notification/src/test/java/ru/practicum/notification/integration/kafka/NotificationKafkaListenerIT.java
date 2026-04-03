@@ -67,7 +67,7 @@ class NotificationKafkaListenerIT {
 
     @Test
     @DisplayName("consumes message from Kafka and calls NotificationService")
-    void test1() throws Exception {
+    void consumesMessageFromKafkaAndCallsNotificationservice() throws Exception {
         NotificationEvent event = NotificationEvent.builder()
                 .eventId(UUID.randomUUID())
                 .eventType(NotificationEventType.TRANSFER_COMPLETED)

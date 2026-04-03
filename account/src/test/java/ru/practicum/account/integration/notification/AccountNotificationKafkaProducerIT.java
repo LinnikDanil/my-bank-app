@@ -59,7 +59,7 @@ class AccountNotificationKafkaProducerIT {
 
     @Test
     @DisplayName("sends ACCOUNT_UPDATED event to Kafka")
-    void test1() throws Exception {
+    void sendsAccountUpdatedEventToKafka() throws Exception {
         try (var consumerForTest = new DefaultKafkaConsumerFactory<>(
                 KafkaTestUtils.consumerProps(embeddedKafkaBroker, "account-it", true),
                 new StringDeserializer(),
