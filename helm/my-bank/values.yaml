@@ -7,7 +7,7 @@ front:
     replicaCount: 1
     image:
       repository: front-app
-      tag: latest
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8086
@@ -28,7 +28,7 @@ account:
     replicaCount: 1
     image:
       repository: account-app
-      tag: latest
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8082
@@ -37,12 +37,21 @@ account:
       DATASOURCE_SCHEMA_NAME: bank_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
       SPRING_DATASOURCE_USERNAME: postgres
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
+      KAFKA_PRODUCER_ACKS: all
+      KAFKA_PRODUCER_RETRIES: "10"
+      KAFKA_PRODUCER_ENABLE_IDEMPOTENCE: "true"
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_TYPE: COUNT_BASED
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_SIZE: "10"
+      RESILIENCE4J_NOTIFICATION_CB_MINIMUM_NUMBER_OF_CALLS: "5"
+      RESILIENCE4J_NOTIFICATION_CB_PERMITTED_CALLS_HALF_OPEN: "3"
+      RESILIENCE4J_NOTIFICATION_CB_WAIT_DURATION_OPEN_STATE: 10s
+      RESILIENCE4J_NOTIFICATION_CB_FAILURE_RATE_THRESHOLD: "50"
+      RESILIENCE4J_NOTIFICATION_RETRY_MAX_ATTEMPTS: "3"
+      RESILIENCE4J_NOTIFICATION_RETRY_WAIT_DURATION: 300ms
       ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
-      ACCOUNT_CLIENT_ID: account-service
-      ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
-      ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
 
 cash:
   app:
@@ -50,14 +59,34 @@ cash:
     replicaCount: 1
     image:
       repository: cash-app
-      tag: latest
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8083
     env:
       SERVER_PORT: "8083"
       ACCOUNT_BASE_URL: http://account:8082
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
+      KAFKA_PRODUCER_ACKS: all
+      KAFKA_PRODUCER_RETRIES: "10"
+      KAFKA_PRODUCER_ENABLE_IDEMPOTENCE: "true"
+      RESILIENCE4J_ACCOUNT_CB_SLIDING_WINDOW_TYPE: COUNT_BASED
+      RESILIENCE4J_ACCOUNT_CB_SLIDING_WINDOW_SIZE: "10"
+      RESILIENCE4J_ACCOUNT_CB_MINIMUM_NUMBER_OF_CALLS: "5"
+      RESILIENCE4J_ACCOUNT_CB_PERMITTED_CALLS_HALF_OPEN: "3"
+      RESILIENCE4J_ACCOUNT_CB_WAIT_DURATION_OPEN_STATE: 10s
+      RESILIENCE4J_ACCOUNT_CB_FAILURE_RATE_THRESHOLD: "50"
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_TYPE: COUNT_BASED
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_SIZE: "10"
+      RESILIENCE4J_NOTIFICATION_CB_MINIMUM_NUMBER_OF_CALLS: "5"
+      RESILIENCE4J_NOTIFICATION_CB_PERMITTED_CALLS_HALF_OPEN: "3"
+      RESILIENCE4J_NOTIFICATION_CB_WAIT_DURATION_OPEN_STATE: 10s
+      RESILIENCE4J_NOTIFICATION_CB_FAILURE_RATE_THRESHOLD: "50"
+      RESILIENCE4J_ACCOUNT_RETRY_MAX_ATTEMPTS: "3"
+      RESILIENCE4J_ACCOUNT_RETRY_WAIT_DURATION: 300ms
+      RESILIENCE4J_NOTIFICATION_RETRY_MAX_ATTEMPTS: "3"
+      RESILIENCE4J_NOTIFICATION_RETRY_WAIT_DURATION: 300ms
       CASH_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       CASH_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
       CASH_CLIENT_ID: cash-service
@@ -70,19 +99,45 @@ transfer:
     replicaCount: 1
     image:
       repository: transfer-app
-      tag: latest
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
       port: 8084
     env:
       SERVER_PORT: "8084"
+      DATASOURCE_SCHEMA_NAME: transfer_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=transfer_app
+      SPRING_DATASOURCE_USERNAME: postgres
       ACCOUNT_BASE_URL: http://account:8082
-      NOTIFICATION_BASE_URL: http://notification:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
+      KAFKA_PRODUCER_ACKS: all
+      KAFKA_PRODUCER_RETRIES: "10"
+      KAFKA_PRODUCER_ENABLE_IDEMPOTENCE: "true"
+      RESILIENCE4J_ACCOUNT_CB_SLIDING_WINDOW_TYPE: COUNT_BASED
+      RESILIENCE4J_ACCOUNT_CB_SLIDING_WINDOW_SIZE: "10"
+      RESILIENCE4J_ACCOUNT_CB_MINIMUM_NUMBER_OF_CALLS: "5"
+      RESILIENCE4J_ACCOUNT_CB_PERMITTED_CALLS_HALF_OPEN: "3"
+      RESILIENCE4J_ACCOUNT_CB_WAIT_DURATION_OPEN_STATE: 10s
+      RESILIENCE4J_ACCOUNT_CB_FAILURE_RATE_THRESHOLD: "50"
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_TYPE: COUNT_BASED
+      RESILIENCE4J_NOTIFICATION_CB_SLIDING_WINDOW_SIZE: "10"
+      RESILIENCE4J_NOTIFICATION_CB_MINIMUM_NUMBER_OF_CALLS: "5"
+      RESILIENCE4J_NOTIFICATION_CB_PERMITTED_CALLS_HALF_OPEN: "3"
+      RESILIENCE4J_NOTIFICATION_CB_WAIT_DURATION_OPEN_STATE: 10s
+      RESILIENCE4J_NOTIFICATION_CB_FAILURE_RATE_THRESHOLD: "50"
+      RESILIENCE4J_ACCOUNT_RETRY_MAX_ATTEMPTS: "3"
+      RESILIENCE4J_ACCOUNT_RETRY_WAIT_DURATION: 300ms
+      RESILIENCE4J_NOTIFICATION_RETRY_MAX_ATTEMPTS: "3"
+      RESILIENCE4J_NOTIFICATION_RETRY_WAIT_DURATION: 300ms
       TRANSFER_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       TRANSFER_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
       TRANSFER_CLIENT_ID: transfer-service
       TRANSFER_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
       TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+      TRANSFER_OUTBOX_POLL_DELAY_MS: "2000"
+      TRANSFER_OUTBOX_RETRY_DELAY_MS: "5000"
+      TRANSFER_OUTBOX_MAX_ATTEMPTS: "10"
 
 notification:
   app:
@@ -90,14 +145,31 @@ notification:
     replicaCount: 1
     image:
       repository: notification-app
-      tag: latest
+      tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
+      enabled: false
       port: 8085
     env:
       SERVER_PORT: "8085"
+      DATASOURCE_SCHEMA_NAME: notification_app
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=notification_app
+      SPRING_DATASOURCE_USERNAME: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
+      NOTIFICATION_TOPIC: notification-events
+      NOTIFICATION_CONSUMER_GROUP_ID: notification-service
+      KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+      KAFKA_CONSUMER_ENABLE_AUTO_COMMIT: "false"
+      KAFKA_LISTENER_ACK_MODE: manual_immediate
       NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    probes:
+      startup:
+        enabled: false
+      readiness:
+        enabled: false
+      liveness:
+        enabled: false
 
 ingress:
   enabled: true
@@ -126,6 +198,13 @@ postgresql:
     username: postgres
     database: bank
   primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 384Mi
     persistence:
       enabled: true
       size: 2Gi
@@ -133,6 +212,8 @@ postgresql:
       scripts:
         01-create-schema.sql: |
           CREATE SCHEMA IF NOT EXISTS bank_app;
+          CREATE SCHEMA IF NOT EXISTS notification_app;
+          CREATE SCHEMA IF NOT EXISTS transfer_app;
 
 keycloak:
   image:
@@ -151,9 +232,18 @@ keycloak:
     port: 5432
     user: postgres
     database: bank
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 768Mi
   httpRelativePath: /
   extraStartupArgs: "--import-realm"
   extraEnvVars:
+    - name: JAVA_OPTS_KC_HEAP
+      value: "-Xms128m -Xmx512m"
     - name: KC_HOSTNAME
       value: localhost
     - name: KC_HOSTNAME_STRICT
@@ -190,3 +280,35 @@ keycloak:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 6
+
+kafka:
+  fullnameOverride: kafka
+  image:
+    repository: kafkace/kafka
+    tag: v3.7.1-63ba8d2
+    pullPolicy: IfNotPresent
+  broker:
+    replicaCount: 1
+    heapOpts: "-Xms256m -Xmx512m"
+    config:
+      num.partitions: "3"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 768Mi
+    persistence:
+      enabled: true
+      size: 2Gi
+kafkaTopic:
+  name: notification-events
+  partitions: 3
+  replicationFactor: 1
+  initJob:
+    enabled: true
+    image:
+      repository: kafkace/kafka
+      tag: v3.7.1-63ba8d2
+      pullPolicy: IfNotPresent

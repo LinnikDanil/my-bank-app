@@ -1,1 +1,3 @@
-CREATE SCHEMA bank_app;
+CREATE SCHEMA IF NOT EXISTS bank_app;
+CREATE SCHEMA IF NOT EXISTS notification_app;
+CREATE SCHEMA IF NOT EXISTS transfer_app;

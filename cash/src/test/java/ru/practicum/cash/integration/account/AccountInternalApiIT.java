@@ -21,7 +21,7 @@ class AccountInternalApiIT {
 
     @Test
     @DisplayName("internalDeposit")
-    void test1() {
+    void internaldeposit() {
         var builder = ApiClient.buildRestClientBuilder();
         var server = MockRestServiceServer.bindTo(builder).build();
 

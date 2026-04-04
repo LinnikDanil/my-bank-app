@@ -1,6 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
-version = '0.0.1'
+version = '1.2.0'
 description = 'account'
 
 springBoot {
@@ -10,8 +10,8 @@ springBoot {
 dependencies {
     implementation project(':common')
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.4.0'
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-liquibase'
     implementation 'org.postgresql:postgresql:42.7.10'
@@ -27,7 +27,6 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
 }
 
-def notificationClientOut = layout.buildDirectory.dir("generated/notification-client")
 def accountPublicServerOut = layout.buildDirectory.dir("generated/account-public-server")
 def accountInternalServerOut = layout.buildDirectory.dir("generated/account-internal-server")
 
@@ -88,28 +87,11 @@ tasks.register("generateAccountInternalServerOpenApi", GenerateTask) {
     }
 }
 
-tasks.register("generateNotificationClientOpenApi", GenerateTask) {
-    generatorName.set("java")
-    inputSpec.set("$rootDir/openapi/notification-openapi.yaml")
-    outputDir.set(notificationClientOut.map { it.asFile.absolutePath })
-
-    modelPackage.set("ru.practicum.account.integration.notification.domain")
-    apiPackage.set("ru.practicum.account.integration.notification.api")
-    invokerPackage.set("ru.practicum.account.integration.notification.client")
-
-    configOptions.set([
-            library        : "restclient",
-            useJakartaEe   : "true",
-            openApiNullable: "false"
-    ])
-}
-
 sourceSets {
     main {
         java {
             srcDir(layout.buildDirectory.dir("generated/account-public-server/src/main/java"))
             srcDir(layout.buildDirectory.dir("generated/account-internal-server/src/main/java"))
-            srcDir(layout.buildDirectory.dir("generated/notification-client/src/main/java"))
         }
     }
 }
@@ -117,7 +99,6 @@ sourceSets {
 tasks.named("compileJava") {
     dependsOn(
             "generateAccountPublicServerOpenApi",
-            "generateAccountInternalServerOpenApi",
-            "generateNotificationClientOpenApi"
+            "generateAccountInternalServerOpenApi"
     )
 }

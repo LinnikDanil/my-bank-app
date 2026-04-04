@@ -65,7 +65,7 @@
     {
       "clientId": "account-service",
       "name": "Account Service",
-      "description": "Client Credentials для Accounts -> Notifications",
+      "description": "Client Credentials для внутренних запросов сервиса Accounts",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -78,7 +78,7 @@
     {
       "clientId": "cash-service",
       "name": "Cash Service",
-      "description": "Client Credentials для Cash -> Accounts, Notifications",
+      "description": "Client Credentials для Cash -> Accounts",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -91,24 +91,11 @@
     {
       "clientId": "transfer-service",
       "name": "Transfer Service",
-      "description": "Client Credentials для Transfer -> Accounts, Notifications",
+      "description": "Client Credentials для Transfer -> Accounts",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
       "secret": "transfer-secret",
-      "standardFlowEnabled": false,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true
-    },
-    {
-      "clientId": "notification-service",
-      "name": "Notification Service",
-      "description": "Client Credentials для Notifications (если потребуется исходящий вызов)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": false,
-      "secret": "notification-secret",
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
@@ -181,12 +168,6 @@
       "realmRoles": [
         "TRANSFER"
       ]
-    },
-    {
-      "username": "service-account-notification-service",
-      "enabled": true,
-      "serviceAccountClientId": "notification-service",
-      "realmRoles": []
     }
   ]
 }

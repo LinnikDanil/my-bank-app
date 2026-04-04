@@ -1,9 +1,8 @@
 package ru.practicum.common.web.logging;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,6 @@ import java.util.Set;
  * и тело запроса с ограничением по длине.</p>
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class ControllerLoggingInterceptor implements HandlerInterceptor {
 

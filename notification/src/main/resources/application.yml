@@ -1,12 +1,31 @@
 spring:
   application:
     name: notification
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${NOTIFICATION_JWT_ISSUER_URI}
-          jwk-set-uri: ${NOTIFICATION_JWT_JWK_SET_URI}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+    default-schema: ${DATASOURCE_SCHEMA_NAME}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${NOTIFICATION_CONSUMER_GROUP_ID}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT}
+    listener:
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE}
 
-server:
-  port: ${SERVER_PORT}
+spring.main:
+  web-application-type: none
+
+integration:
+  notification:
+    topic: ${NOTIFICATION_TOPIC}

@@ -55,7 +55,7 @@ class CashWebMvcTest {
 
         @Test
         @DisplayName("deposit")
-        void test1() throws Exception {
+        void deposit() throws Exception {
             var response = new CashOperationResponse(USERNAME, new BigDecimal("100.00"), new BigDecimal("1100.00"));
 
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
@@ -74,7 +74,7 @@ class CashWebMvcTest {
 
         @Test
         @DisplayName("withdraw")
-        void test2() throws Exception {
+        void withdraw() throws Exception {
             var response = new CashOperationResponse(USERNAME, new BigDecimal("50.00"), new BigDecimal("950.00"));
 
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
@@ -93,7 +93,7 @@ class CashWebMvcTest {
 
         @Test
         @DisplayName("withdraw insufficient funds mapped to 409")
-        void test3() throws Exception {
+        void withdrawInsufficientFundsMappedTo409() throws Exception {
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME);
             when(cashService.withdraw(eq(USERNAME), any())).thenThrow(new InsufficientFundsException(USERNAME));
 
@@ -107,7 +107,7 @@ class CashWebMvcTest {
 
         @Test
         @DisplayName("validation error")
-        void test4() throws Exception {
+        void validationError() throws Exception {
             mockMvc.perform(post("/api/v1/cash/deposit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))

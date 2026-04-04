@@ -2,10 +2,8 @@ package ru.practicum.notification.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.notification.domain.NotificationEvent;
-import ru.practicum.notification.domain.NotificationEventPayload;
-import ru.practicum.notification.domain.NotificationEventType;
-import ru.practicum.notification.domain.exception.InvalidNotificationEventException;
+import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.notification.NotificationEventPayload;
 import ru.practicum.notification.service.NotificationService;
 
 import java.math.BigDecimal;
@@ -24,8 +22,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void processEvent(NotificationEvent event) {
-        validateEvent(event);
-
         String message = switch (event.getEventType()) {
             case ACCOUNT_UPDATED -> formatAccountUpdated(event);
             case CASH_DEPOSIT -> formatCashDeposit(event);
@@ -36,32 +32,8 @@ public class NotificationServiceImpl implements NotificationService {
         log.info(message);
     }
 
-    private void validateEvent(NotificationEvent event) {
-        if (event == null) {
-            throw new InvalidNotificationEventException();
-        }
-        if (event.getEventId() == null || event.getEventType() == null || event.getTimestamp() == null) {
-            throw new InvalidNotificationEventException("eventId, eventType and timestamp are required");
-        }
-        if (event.getRecipients() == null || event.getRecipients().isEmpty()) {
-            throw new InvalidNotificationEventException("recipients must not be empty");
-        }
-        boolean hasBlankRecipient = event.getRecipients().stream().anyMatch(r -> r == null || r.isBlank());
-        if (hasBlankRecipient) {
-            throw new InvalidNotificationEventException("recipients contain blank value");
-        }
-        if (event.getPayload() == null) {
-            throw new InvalidNotificationEventException("payload is required");
-        }
-    }
-
     private String formatAccountUpdated(NotificationEvent event) {
         NotificationEventPayload p = event.getPayload();
-        requireNotBlank(p.getUsername(), "payload.username is required");
-        requireNotBlank(p.getFullName(), "payload.fullName is required");
-        if (p.getDateOfBirth() == null) {
-            throw new InvalidNotificationEventException("payload.dateOfBirth is required");
-        }
 
         return formatPrettyBlock(
                 event,
@@ -75,38 +47,33 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private String formatCashDeposit(NotificationEvent event) {
-        CashPayloadData data = extractCashPayloadData(event.getPayload());
+        NotificationEventPayload p = event.getPayload();
 
         return formatPrettyBlock(
                 event,
                 "CASH DEPOSIT",
                 List.of(
-                        "User: " + data.username(),
-                        "Amount: +" + amount(data.amount())
+                        "User: " + p.getUsername(),
+                        "Amount: +" + amount(p.getAmount())
                 )
         );
     }
 
     private String formatCashWithdraw(NotificationEvent event) {
-        CashPayloadData data = extractCashPayloadData(event.getPayload());
+        NotificationEventPayload p = event.getPayload();
 
         return formatPrettyBlock(
                 event,
                 "CASH WITHDRAW",
                 List.of(
-                        "User: " + data.username(),
-                        "Amount: -" + amount(data.amount())
+                        "User: " + p.getUsername(),
+                        "Amount: -" + amount(p.getAmount())
                 )
         );
     }
 
     private String formatTransferCompleted(NotificationEvent event) {
         NotificationEventPayload p = event.getPayload();
-        requireNotBlank(p.getUsernameFrom(), "payload.usernameFrom is required");
-        requireNotBlank(p.getUsernameTo(), "payload.usernameTo is required");
-        if (p.getAmount() == null) {
-            throw new InvalidNotificationEventException("payload.amount is required");
-        }
 
         return formatPrettyBlock(
                 event,
@@ -117,20 +84,6 @@ public class NotificationServiceImpl implements NotificationService {
                         "Amount: " + amount(p.getAmount())
                 )
         );
-    }
-
-    private CashPayloadData extractCashPayloadData(NotificationEventPayload payload) {
-        requireNotBlank(payload.getUsername(), "payload.username is required");
-        if (payload.getAmount() == null) {
-            throw new InvalidNotificationEventException("payload.amount is required");
-        }
-        return new CashPayloadData(payload.getUsername(), payload.getAmount());
-    }
-
-    private void requireNotBlank(String value, String message) {
-        if (value == null || value.isBlank()) {
-            throw new InvalidNotificationEventException(message);
-        }
     }
 
     private String formatPrettyBlock(NotificationEvent event, String title, List<String> lines) {
@@ -163,8 +116,5 @@ public class NotificationServiceImpl implements NotificationService {
 
     private String amount(BigDecimal amount) {
         return amount == null ? "n/a" : amount.stripTrailingZeros().toPlainString();
-    }
-
-    private record CashPayloadData(String username, BigDecimal amount) {
     }
 }

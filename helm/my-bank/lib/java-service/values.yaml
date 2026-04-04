@@ -8,6 +8,7 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  enabled: true
   port: 8080
 
 env: {}
@@ -33,4 +34,10 @@ probes:
     timeoutSeconds: 3
     failureThreshold: 6
 
-resources: {}
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi

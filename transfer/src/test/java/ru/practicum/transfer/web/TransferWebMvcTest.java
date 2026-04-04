@@ -55,7 +55,7 @@ class TransferWebMvcTest {
 
         @Test
         @DisplayName("create transfer")
-        void test1() throws Exception {
+        void createTransfer_returnsOkResponse() throws Exception {
             var response = new TransferResponse(USERNAME_FROM, "petrpetrov", new BigDecimal("250.00"));
 
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME_FROM);
@@ -75,7 +75,7 @@ class TransferWebMvcTest {
 
         @Test
         @DisplayName("insufficient funds mapped to 409")
-        void test2() throws Exception {
+        void createTransfer_returnsConflict_whenInsufficientFunds() throws Exception {
             when(currentUsernameProvider.requireUsername()).thenReturn(USERNAME_FROM);
             when(transferService.transfer(eq(USERNAME_FROM), any())).thenThrow(new InsufficientFundsException(USERNAME_FROM));
 
@@ -89,7 +89,7 @@ class TransferWebMvcTest {
 
         @Test
         @DisplayName("validation error")
-        void test3() throws Exception {
+        void createTransfer_returnsBadRequest_whenPayloadIsInvalid() throws Exception {
             mockMvc.perform(post("/api/v1/transfers")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))

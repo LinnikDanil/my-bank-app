@@ -1,0 +1,38 @@
+{{- if .Values.kafkaTopic.initJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-kafka-topic-init"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-topic
+          image: "{{ .Values.kafkaTopic.initJob.image.repository }}:{{ .Values.kafkaTopic.initJob.image.tag }}"
+          imagePullPolicy: {{ .Values.kafkaTopic.initJob.image.pullPolicy }}
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              BROKER_HOST="kafka-broker"
+              BROKER_PORT="9092"
+
+              for attempt in $(seq 1 60); do
+                if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${BROKER_HOST}/${BROKER_PORT}"; then
+                  break
+                fi
+                sleep 2
+              done
+
+              /opt/kafka/bin/kafka-topics.sh \
+                --bootstrap-server "${BROKER_HOST}:${BROKER_PORT}" \
+                --create \
+                --if-not-exists \
+                --topic "{{ .Values.kafkaTopic.name }}" \
+                --partitions {{ .Values.kafkaTopic.partitions }} \
+                --replication-factor {{ .Values.kafkaTopic.replicationFactor }}
+{{- end }}

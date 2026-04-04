@@ -1,15 +1,18 @@
 package ru.practicum.cash.integration.notification.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import ru.practicum.cash.integration.notification.api.NotificationInternalApi;
-import ru.practicum.cash.integration.notification.domain.NotificationEvent;
-import ru.practicum.cash.integration.notification.domain.NotificationEventPayload;
-import ru.practicum.cash.integration.notification.domain.NotificationEventType;
 import ru.practicum.cash.integration.notification.service.CashNotificationService;
+import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.notification.NotificationEventPayload;
+import ru.practicum.common.notification.NotificationEventType;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -22,40 +25,63 @@ import java.util.UUID;
 @Slf4j
 public class CashNotificationServiceImpl implements CashNotificationService {
 
-    private final NotificationInternalApi notificationInternalApi;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+
+    @Value("${integration.notification.topic}")
+    private String notificationTopic;
 
     @Override
     @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyCashDepositFallback")
     @Retry(name = "notificationService", fallbackMethod = "notifyCashDepositFallback")
     public void notifyCashDeposit(String username, BigDecimal amount) {
-        NotificationEventPayload payload = new NotificationEventPayload()
+        NotificationEventPayload payload = NotificationEventPayload.builder()
                 .username(username)
-                .amount(amount);
+                .amount(amount)
+                .build();
 
-        sendEvent(username, NotificationEventType.CASH_DEPOSIT, payload);
+        sendEvent(List.of(username), NotificationEventType.CASH_DEPOSIT, payload);
     }
 
     @Override
     @CircuitBreaker(name = "notificationService", fallbackMethod = "notifyCashWithdrawFallback")
     @Retry(name = "notificationService", fallbackMethod = "notifyCashWithdrawFallback")
     public void notifyCashWithdraw(String username, BigDecimal amount) {
-        NotificationEventPayload payload = new NotificationEventPayload()
+        NotificationEventPayload payload = NotificationEventPayload.builder()
                 .username(username)
-                .amount(amount);
+                .amount(amount)
+                .build();
 
-        sendEvent(username, NotificationEventType.CASH_WITHDRAW, payload);
+        sendEvent(List.of(username), NotificationEventType.CASH_WITHDRAW, payload);
     }
 
-    private void sendEvent(String recipient, NotificationEventType eventType, NotificationEventPayload payload) {
-        log.info("Отправка события в notification-service: type={}, recipient={}", eventType, recipient);
-        NotificationEvent event = new NotificationEvent()
+    private void sendEvent(List<String> recipients, NotificationEventType eventType, NotificationEventPayload payload) {
+        NotificationEvent event = NotificationEvent.builder()
                 .eventId(UUID.randomUUID())
                 .eventType(eventType)
                 .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-                .recipients(List.of(recipient))
-                .payload(payload);
-        notificationInternalApi.sendNotificationEvent(event);
-        log.info("Событие отправлено в notification-service: eventId={}, type={}", event.getEventId(), eventType);
+                .recipients(recipients)
+                .payload(payload)
+                .build();
+
+        try {
+            String eventJson = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            log.error("Не удалось отправить событие в Kafka: eventId={}, type={}",
+                                    event.getEventId(), eventType, ex);
+                            return;
+                        }
+                        log.info("Событие отправлено в Kafka: eventId={}, type={}, partition={}, offset={}",
+                                event.getEventId(),
+                                eventType,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    });
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Не удалось сериализовать notification-событие", e);
+        }
     }
 
     private void notifyCashDepositFallback(String username, BigDecimal amount, Throwable throwable) {

@@ -29,7 +29,7 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("returns preferred_username")
-        void test1() {
+        void returnsPreferredUsername() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "none")
                     .claim("preferred_username", "ivanivanov")
@@ -44,7 +44,7 @@ class CurrentUsernameProviderTest {
 
         @Test
         @DisplayName("throws when principal is not jwt")
-        void test2() {
+        void throwsWhenPrincipalIsNotJwt() {
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken("user", "password")
             );

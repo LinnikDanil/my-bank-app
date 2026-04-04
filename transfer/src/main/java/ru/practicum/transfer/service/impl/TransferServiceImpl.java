@@ -5,14 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.transfer.domain.TransferRequest;
 import ru.practicum.transfer.domain.TransferResponse;
+import ru.practicum.transfer.domain.exception.AccountNotFoundException;
+import ru.practicum.transfer.domain.exception.InsufficientFundsException;
 import ru.practicum.transfer.domain.exception.InvalidAmountException;
 import ru.practicum.transfer.domain.exception.InvalidTransferRequestException;
 import ru.practicum.transfer.domain.exception.InvalidUsernameException;
+import ru.practicum.transfer.domain.exception.UpstreamServiceException;
+import ru.practicum.transfer.domain.model.TransferEntity;
 import ru.practicum.transfer.integration.account.service.TransferAccountService;
-import ru.practicum.transfer.integration.notification.service.TransferNotificationService;
 import ru.practicum.transfer.service.TransferService;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +24,7 @@ import java.math.BigDecimal;
 public class TransferServiceImpl implements TransferService {
 
     private final TransferAccountService transferAccountService;
-    private final TransferNotificationService transferNotificationService;
+    private final TransferPersistenceService transferPersistenceService;
 
     @Override
     public TransferResponse transfer(String usernameFrom, TransferRequest request) {
@@ -32,35 +36,33 @@ public class TransferServiceImpl implements TransferService {
 
         log.info("Выполнение перевода: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
 
-        transferAccountService.withdraw(usernameFrom, amount);
+        TransferEntity transfer = transferPersistenceService.createPendingTransfer(usernameFrom, usernameTo, amount);
+        try {
+            transferAccountService.withdraw(usernameFrom, amount);
+        } catch (RuntimeException withdrawException) {
+            failTransferSafely(transfer.getId(), "Withdraw failed: " + withdrawException.getMessage());
+            throw withdrawException;
+        }
         try {
             transferAccountService.deposit(usernameTo, amount);
-        } catch (RuntimeException depositException) {
-            compensateTransfer(usernameFrom, usernameTo, amount, depositException);
-            throw depositException;
+        } catch (AccountNotFoundException
+                 | InvalidAmountException
+                 | InsufficientFundsException
+                 | UpstreamServiceException depositException) {
+            try {
+                transferPersistenceService.enqueueCompensation(transfer.getId(), depositException.getMessage());
+            } catch (RuntimeException compensationScheduleException) {
+                log.error("Не удалось запланировать компенсацию перевода: transferId={}", transfer.getId(), compensationScheduleException);
+                throw new UpstreamServiceException("Transfer failed and compensation scheduling failed. Manual intervention required.");
+            }
+            throw new UpstreamServiceException(
+                    "Transfer could not be completed. Compensation was scheduled asynchronously."
+            );
         }
-        transferNotificationService.notifyTransferCompleted(usernameFrom, usernameTo, amount);
+        transferPersistenceService.markCompletedAndEnqueueNotification(transfer.getId());
 
         log.info("Перевод выполнен: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
         return new TransferResponse(usernameFrom, usernameTo, amount);
-    }
-
-    private void compensateTransfer(String usernameFrom,
-                                    String usernameTo,
-                                    BigDecimal amount,
-                                    RuntimeException depositException) {
-        log.warn("Не удалось зачислить перевод получателю, запускаем компенсацию: usernameFrom={}, usernameTo={}, amount={}",
-                usernameFrom, usernameTo, amount, depositException);
-        try {
-            transferAccountService.deposit(usernameFrom, amount);
-            log.info("Компенсация перевода выполнена: usernameFrom={}, amount={}", usernameFrom, amount);
-        } catch (RuntimeException compensationException) {
-            log.error("Компенсация перевода не удалась: usernameFrom={}, usernameTo={}, amount={}",
-                    usernameFrom, usernameTo, amount, compensationException);
-            throw new ru.practicum.transfer.domain.exception.UpstreamServiceException(
-                    "Transfer failed and compensation failed. Manual intervention required."
-            );
-        }
     }
 
     private void validateUsername(String username) {
@@ -84,5 +86,13 @@ public class TransferServiceImpl implements TransferService {
             throw new InvalidAmountException();
         }
         request.setUsernameTo(usernameTo);
+    }
+
+    private void failTransferSafely(UUID transferId, String reason) {
+        try {
+            transferPersistenceService.markFailed(transferId, reason);
+        } catch (RuntimeException markFailedException) {
+            log.error("Не удалось перевести transfer в FAILED: transferId={}", transferId, markFailedException);
+        }
     }
 }

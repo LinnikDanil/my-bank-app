@@ -22,8 +22,11 @@ dependencies:
     version: 0.1.0
     repository: file://charts/notification
   - name: postgresql
-    version: ">=0.0.0"
+    version: "18.5.15"
     repository: https://charts.bitnami.com/bitnami
   - name: keycloak
-    version: ">=0.0.0"
+    version: "25.2.0"
     repository: https://charts.bitnami.com/bitnami
+  - name: kafka
+    version: "18.0.1"
+    repository: https://helm-charts.itboon.top/kafka

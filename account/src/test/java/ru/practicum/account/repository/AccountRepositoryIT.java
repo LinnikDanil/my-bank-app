@@ -43,7 +43,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("returns account")
-        void test1() {
+        void returnsAccount() {
             var account = TestDataFactory.createDefaultAccount();
             accountRepository.save(account);
 
@@ -57,7 +57,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("returns empty when not found")
-        void test2() {
+        void returnsEmptyWhenNotFound() {
             var result = accountRepository.findByUsername("missing-user");
             assertThat(result).isEmpty();
         }
@@ -85,7 +85,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("excludes current user and filters by search")
-        void test1() {
+        void excludesCurrentUserAndFiltersBySearch() {
             var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "pet",
@@ -104,7 +104,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("returns all except current user when search is null")
-        void test2() {
+        void returnsAllExceptCurrentUserWhenSearchIsNull() {
             var result = accountRepository.findByUsernameNot("ivanivanov", PageRequest.of(0, 10));
 
             assertThat(result.getContent()).hasSize(3);
@@ -116,7 +116,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("search is case insensitive")
-        void test3() {
+        void searchIsCaseInsensitive() {
             var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "PETR",
@@ -130,7 +130,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("applies pagination")
-        void test4() {
+        void appliesPagination() {
             var result = accountRepository.findByUsernameNot("ivanivanov", PageRequest.of(0, 2));
 
             assertThat(result.getContent()).hasSize(2);
@@ -144,7 +144,7 @@ class AccountRepositoryIT {
 
         @Test
         @DisplayName("returns empty when no matches")
-        void test5() {
+        void returnsEmptyWhenNoMatches() {
             var result = accountRepository.findRecipientsBySearch(
                     "ivanivanov",
                     "zzzz-no-match",

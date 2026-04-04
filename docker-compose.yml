@@ -3,12 +3,9 @@ services:
     container_name: bank-db
     image: postgres:17.5
     restart: always
+    mem_limit: 384m
     env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - ./env/bank-db.env
     ports:
       - "5433:5432"
     volumes:
@@ -20,13 +17,11 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     command: ["start-dev", "--import-realm"]
+    mem_limit: 768m
+    env_file:
+      - ./env/keycloak.env
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-Xms128m -Xmx512m"
     ports:
       - "8080:8080"
     volumes:
@@ -39,26 +34,34 @@ services:
     networks:
       - bank-network
 
+  kafka:
+    container_name: kafka
+    image: bitnamilegacy/kafka:4.0.0-debian-12-r3
+    restart: always
+    mem_limit: 768m
+    ports:
+      - "9092:9092"
+    env_file:
+      - ./env/kafka.env
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - bank-network
+
   front-app:
     container_name: front-app
     build:
-      context: ./front
-      dockerfile: Dockerfile
-    image: front-app
+      context: .
+      dockerfile: front/Dockerfile
+    image: front-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8086:8086"
-    environment:
-      SERVER_PORT: "8086"
-      FRONT_CLIENT_ID: front
-      FRONT_CLIENT_SECRET: front-secret
-      FRONT_AUTHORIZATION_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/auth
-      FRONT_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
-      FRONT_USER_INFO_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/userinfo
-      FRONT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
-      FRONT_ACCOUNT_BASE_URL: http://account-app:8082
-      FRONT_CASH_BASE_URL: http://cash-app:8083
-      FRONT_TRANSFER_BASE_URL: http://transfer-app:8084
+    env_file:
+      - ./env/front-app.env
     depends_on:
       keycloak:
         condition: service_healthy
@@ -68,104 +71,86 @@ services:
   account-app:
     container_name: account-app
     build:
-      context: ./account
-      dockerfile: Dockerfile
-    image: account-app
+      context: .
+      dockerfile: account/Dockerfile
+    image: account-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8082:8082"
-    environment:
-      SERVER_PORT: "8082"
-      DATASOURCE_SCHEMA_NAME: bank_app
-      SPRING_DATASOURCE_URL: jdbc:postgresql://bank-db:5432/bank?currentSchema=bank_app
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      NOTIFICATION_BASE_URL: http://notification-app:8085
-      ACCOUNT_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
-      ACCOUNT_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
-      ACCOUNT_CLIENT_ID: account-service
-      ACCOUNT_CLIENT_SECRET: account-secret
-      ACCOUNT_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
-      ACCOUNT_OUTBOUND_OAUTH2_REGISTRATION_ID: account-service-client
+    env_file:
+      - ./env/account-app.env
     depends_on:
       bank-db:
         condition: service_started
       keycloak:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - bank-network
 
   cash-app:
     container_name: cash-app
     build:
-      context: ./cash
-      dockerfile: Dockerfile
-    image: cash-app
+      context: .
+      dockerfile: cash/Dockerfile
+    image: cash-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8083:8083"
-    environment:
-      SERVER_PORT: "8083"
-      ACCOUNT_BASE_URL: http://account-app:8082
-      NOTIFICATION_BASE_URL: http://notification-app:8085
-      CASH_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
-      CASH_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
-      CASH_CLIENT_ID: cash-service
-      CASH_CLIENT_SECRET: cash-secret
-      CASH_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
-      CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
+    env_file:
+      - ./env/cash-app.env
     depends_on:
       keycloak:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - bank-network
 
   transfer-app:
     container_name: transfer-app
     build:
-      context: ./transfer
-      dockerfile: Dockerfile
-    image: transfer-app
+      context: .
+      dockerfile: transfer/Dockerfile
+    image: transfer-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8084:8084"
-    environment:
-      SERVER_PORT: "8084"
-      ACCOUNT_BASE_URL: http://account-app:8082
-      NOTIFICATION_BASE_URL: http://notification-app:8085
-      TRANSFER_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
-      TRANSFER_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
-      TRANSFER_CLIENT_ID: transfer-service
-      TRANSFER_CLIENT_SECRET: transfer-secret
-      TRANSFER_OAUTH2_TOKEN_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/token
-      TRANSFER_OUTBOUND_OAUTH2_REGISTRATION_ID: transfer-service-client
+    env_file:
+      - ./env/transfer-app.env
     depends_on:
       keycloak:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - bank-network
 
   notification-app:
     container_name: notification-app
     build:
-      context: ./notification
-      dockerfile: Dockerfile
-    image: notification-app
+      context: .
+      dockerfile: notification/Dockerfile
+    image: notification-app:1.2.0
     restart: on-failure
+    mem_limit: 384m
     ports:
       - "8085:8085"
-    environment:
-      SERVER_PORT: "8085"
-      NOTIFICATION_JWT_ISSUER_URI: http://localhost:8080/realms/my-bank-realm
-      NOTIFICATION_JWT_JWK_SET_URI: http://keycloak:8080/realms/my-bank-realm/protocol/openid-connect/certs
+    env_file:
+      - ./env/notification-app.env
     depends_on:
-      keycloak:
-        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - bank-network
 
 volumes:
   db-data:
+  kafka-data:
 
 networks:
   bank-network:
