@@ -1,14 +1,12 @@
 version = '0.0.1'
 description = 'common'
 
-bootJar {
-    enabled = false
-}
-
-jar {
-    enabled = true
-}
-
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation libs.spring.boot.autoconfigure
+    implementation libs.spring.webmvc
+    implementation libs.spring.security.oauth2.client
+    implementation libs.jackson.databind
+
+    compileOnly libs.jakarta.servlet.api
+    compileOnly libs.slf4j.api
 }

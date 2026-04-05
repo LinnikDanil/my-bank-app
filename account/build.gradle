@@ -9,22 +9,21 @@ springBoot {
 
 dependencies {
     implementation project(':common')
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    implementation 'org.springframework.boot:spring-boot-starter-kafka'
-    implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-liquibase'
-    implementation 'org.postgresql:postgresql:42.7.10'
-    implementation 'org.mapstruct:mapstruct:1.6.3'
+    implementation libs.spring.boot.starter.oauth2.resource.server
+    implementation libs.spring.boot.starter.kafka
+    implementation libs.resilience4j.spring.boot4
+    implementation libs.spring.boot.starter.data.jpa
+    implementation libs.spring.boot.liquibase
+    implementation libs.postgresql
+    implementation libs.mapstruct
 
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
-    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    annotationProcessor libs.mapstruct.processor
+    annotationProcessor libs.lombok.mapstruct.binding
 
-    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.6')
-    testImplementation 'org.springframework.boot:spring-boot-data-jpa-test'
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
+    testImplementation libs.spring.boot.data.jpa.test
+    testImplementation libs.spring.boot.testcontainers
+    testImplementation libs.testcontainers.junit.jupiter
+    testImplementation libs.testcontainers.postgresql
 }
 
 def accountPublicServerOut = layout.buildDirectory.dir("generated/account-public-server")
