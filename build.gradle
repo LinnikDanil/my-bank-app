@@ -8,6 +8,7 @@ def webProjects = ['front', 'account', 'cash', 'transfer']
 def openApiProjects = ['front', 'account', 'cash', 'transfer']
 def libraryProjects = ['common']
 def dbProjects = ['account', 'transfer', 'notification']
+def actuatorWebProjects = ['notification']
 
 version = '0.0.1-SNAPSHOT'
 description = 'my-bank-app'
@@ -57,6 +58,12 @@ configure(subprojects.findAll { it.name in webProjects }) {
         implementation libs.springdoc.openapi.starter.webmvc.ui
 
         testImplementation libs.spring.boot.starter.webmvc.test
+    }
+}
+
+configure(subprojects.findAll { it.name in actuatorWebProjects }) {
+    dependencies {
+        implementation libs.spring.boot.starter.webmvc
     }
 }
 

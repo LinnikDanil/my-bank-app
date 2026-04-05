@@ -10,6 +10,7 @@ image:
 service:
   enabled: true
   port: 8080
+  annotations: {}
 
 env: {}
 secretEnv: {}

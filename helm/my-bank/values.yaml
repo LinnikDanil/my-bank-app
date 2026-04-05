@@ -11,6 +11,10 @@ front:
       pullPolicy: IfNotPresent
     service:
       port: 8086
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8086"
     env:
       SERVER_PORT: "8086"
       ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -33,6 +37,10 @@ account:
       pullPolicy: IfNotPresent
     service:
       port: 8082
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8082"
     env:
       SERVER_PORT: "8082"
       ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -65,6 +73,10 @@ cash:
       pullPolicy: IfNotPresent
     service:
       port: 8083
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8083"
     env:
       SERVER_PORT: "8083"
       ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -106,6 +118,10 @@ transfer:
       pullPolicy: IfNotPresent
     service:
       port: 8084
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8084"
     env:
       SERVER_PORT: "8084"
       ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -152,8 +168,12 @@ notification:
       tag: 1.2.0
       pullPolicy: IfNotPresent
     service:
-      enabled: false
+      enabled: true
       port: 8085
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8085"
     env:
       SERVER_PORT: "8085"
       ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -170,11 +190,11 @@ notification:
       NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
     probes:
       startup:
-        enabled: false
+        enabled: true
       readiness:
-        enabled: false
+        enabled: true
       liveness:
-        enabled: false
+        enabled: true
 
 ingress:
   enabled: true
@@ -351,6 +371,16 @@ prometheus:
   server:
     persistentVolume:
       enabled: false
+    extraScrapeConfigs:
+      - job_name: my-bank-apps
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - front:8086
+              - account:8082
+              - cash:8083
+              - transfer:8084
+              - notification:8085
     ingress:
       enabled: true
       ingressClassName: nginx

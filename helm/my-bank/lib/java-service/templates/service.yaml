@@ -5,6 +5,10 @@ metadata:
   name: {{ include "java-service.name" . }}
   labels:
     app.kubernetes.io/name: {{ include "java-service.name" . }}
+  {{- with .Values.service.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+  {{- end }}
 spec:
   selector:
     app.kubernetes.io/name: {{ include "java-service.name" . }}

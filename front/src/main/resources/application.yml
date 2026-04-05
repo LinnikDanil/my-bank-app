@@ -25,6 +25,22 @@ server:
   port: ${SERVER_PORT}
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        http.client.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+        http.client.requests: 0.5,0.95,0.99
   tracing:
     sampling:
       probability: 1.0
