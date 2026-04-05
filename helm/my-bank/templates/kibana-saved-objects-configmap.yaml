@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-kibana-saved-objects
+data:
+  bank-logs.ndjson: |
+    {"type":"index-pattern","id":"bank-logs","attributes":{"title":"bank-logs-*","timeFieldName":"@timestamp","allowNoIndex":true,"fieldFormats":"{}","sourceFilters":"[]","runtimeFieldMap":"{}"}}
+    {"type":"search","id":"bank-logs-search","attributes":{"title":"Bank Logs","description":"Базовый поиск логов по service, level и traceId","columns":["service","level","traceId","spanId","message"],"sort":[["@timestamp","desc"]],"grid":{},"hideChart":false,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\",\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[]}"}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":"bank-logs"}]}

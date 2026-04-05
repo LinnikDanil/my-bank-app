@@ -471,7 +471,45 @@ logstash:
           codec => json_lines
         }
       }
+      filter {
+        if [timestamp] {
+          date {
+            match => ["timestamp", "ISO8601"]
+            target => "@timestamp"
+          }
+        }
+
+        mutate {
+          add_field => {
+            "[event][dataset]" => "bank.application"
+          }
+        }
+
+        if [message] {
+          mutate {
+            gsub => [
+              "message", "(?i)(password=)([^\\s,;]+)", "\\1***",
+              "message", "(?i)(token=)([^\\s,;]+)", "\\1***",
+              "message", "(?i)(bearer\\s+)([^\\s,;]+)", "\\1***"
+            ]
+          }
+        }
+
+        if [exception] {
+          mutate {
+            gsub => [
+              "exception", "(?i)(password=)([^\\s,;]+)", "\\1***",
+              "exception", "(?i)(token=)([^\\s,;]+)", "\\1***",
+              "exception", "(?i)(bearer\\s+)([^\\s,;]+)", "\\1***"
+            ]
+          }
+        }
+      }
       output {
+        elasticsearch {
+          hosts => ["http://elasticsearch:9200"]
+          index => "bank-logs-%{+YYYY.MM.dd}"
+        }
         stdout {
           codec => rubydebug
         }
@@ -491,6 +529,11 @@ logstash:
 kibana:
   fullnameOverride: kibana
   replicaCount: 1
+  savedObjects:
+    configmap: "{{ .Release.Name }}-kibana-saved-objects"
+    overwrite: true
+  extraConfiguration:
+    server.defaultRoute: /app/discover
   persistence:
     enabled: false
   elasticsearch:
