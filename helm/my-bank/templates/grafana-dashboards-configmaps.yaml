@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-bank-dashboard-http
+  labels:
+    grafana_dashboard: "1"
+data:
+  my-bank-http.json: |
+{{ .Files.Get "dashboards/my-bank-http.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-bank-dashboard-jvm
+  labels:
+    grafana_dashboard: "1"
+data:
+  my-bank-jvm.json: |
+{{ .Files.Get "dashboards/my-bank-jvm.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-bank-dashboard-business
+  labels:
+    grafana_dashboard: "1"
+data:
+  my-bank-business.json: |
+{{ .Files.Get "dashboards/my-bank-business.json" | indent 4 }}

@@ -7,7 +7,7 @@ front:
     replicaCount: 1
     image:
       repository: front-app
-      tag: 1.2.0
+      tag: 1.3.0
       pullPolicy: IfNotPresent
     service:
       port: 8086
@@ -35,7 +35,7 @@ account:
     replicaCount: 1
     image:
       repository: account-app
-      tag: 1.2.0
+      tag: 1.3.0
       pullPolicy: IfNotPresent
     service:
       port: 8082
@@ -73,7 +73,7 @@ cash:
     replicaCount: 1
     image:
       repository: cash-app
-      tag: 1.2.0
+      tag: 1.3.0
       pullPolicy: IfNotPresent
     service:
       port: 8083
@@ -120,7 +120,7 @@ transfer:
     replicaCount: 1
     image:
       repository: transfer-app
-      tag: 1.2.0
+      tag: 1.3.0
       pullPolicy: IfNotPresent
     service:
       port: 8084
@@ -173,7 +173,7 @@ notification:
     replicaCount: 1
     image:
       repository: notification-app
-      tag: 1.2.0
+      tag: 1.3.0
       pullPolicy: IfNotPresent
     service:
       enabled: true
@@ -378,6 +378,61 @@ prometheus:
     enabled: false
   prometheus-pushgateway:
     enabled: false
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: my-bank-http
+          rules:
+            - alert: MyBankServiceDown
+              expr: up{job="my-bank-apps"} == 0
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Сервис my-bank недоступен"
+                description: "Prometheus не может получить метрики с {{ $labels.instance }} более 2 минут."
+            - alert: MyBankHighHttp5xxRate
+              expr: sum by (instance) (rate(http_server_requests_seconds_count{job="my-bank-apps",status=~"5.."}[5m])) > 0.05
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Повышенный уровень 5xx"
+                description: "На {{ $labels.instance }} доля 5xx превышает порог 0.05 RPS в течение 5 минут."
+            - alert: MyBankHighHttpP95Latency
+              expr: histogram_quantile(0.95, sum by (le, instance) (rate(http_server_requests_seconds_bucket{job="my-bank-apps"}[5m]))) > 1
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Высокая latency p95"
+                description: "На {{ $labels.instance }} p95 входящих HTTP-запросов превышает 1 секунду более 10 минут."
+        - name: my-bank-business
+          rules:
+            - alert: MyBankCashDepositFailures
+              expr: sum by (username) (increase(bank_cash_deposit_failures_total[10m])) > 2
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Много неуспешных пополнений"
+                description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток пополнения за 10 минут."
+            - alert: MyBankCashWithdrawFailures
+              expr: sum by (username) (increase(bank_cash_withdraw_failures_total[10m])) > 2
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Много неуспешных снятий"
+                description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток снятия за 10 минут."
+            - alert: MyBankTransferFailures
+              expr: sum by (username_from, username_to) (increase(bank_transfer_failures_total[10m])) > 1
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Неуспешные переводы"
+                description: "Пара {{ $labels.username_from }} -> {{ $labels.username_to }} имеет больше 1 неуспешной попытки перевода за 10 минут."
   server:
     persistentVolume:
       enabled: false
@@ -412,6 +467,22 @@ grafana:
     enabled: false
   adminUser: admin
   adminPassword: admin
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          uid: prometheus
+          type: prometheus
+          access: proxy
+          url: http://my-bank-prometheus-server
+          isDefault: true
+          editable: false
+  sidecar:
+    dashboards:
+      enabled: true
+      provider:
+        folder: My Bank
   service:
     type: ClusterIP
   ingress:

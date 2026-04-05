@@ -36,6 +36,7 @@ spec:
           wait_tcp kafka-broker 9092
           wait_tcp zipkin 9411
           wait_tcp my-bank-prometheus-server 80
+          wait_tcp my-bank-alertmanager 9093
           wait_tcp grafana 80
           wait_tcp elasticsearch 9200
           wait_tcp logstash 5044
