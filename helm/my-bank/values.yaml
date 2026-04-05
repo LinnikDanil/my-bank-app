@@ -13,6 +13,7 @@ front:
       port: 8086
     env:
       SERVER_PORT: "8086"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       FRONT_CLIENT_ID: front
       FRONT_AUTHORIZATION_URI: http://localhost/realms/my-bank-realm/protocol/openid-connect/auth
       FRONT_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
@@ -34,6 +35,7 @@ account:
       port: 8082
     env:
       SERVER_PORT: "8082"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       DATASOURCE_SCHEMA_NAME: bank_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
       SPRING_DATASOURCE_USERNAME: postgres
@@ -65,6 +67,7 @@ cash:
       port: 8083
     env:
       SERVER_PORT: "8083"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       ACCOUNT_BASE_URL: http://account:8082
       KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
       NOTIFICATION_TOPIC: notification-events
@@ -105,6 +108,7 @@ transfer:
       port: 8084
     env:
       SERVER_PORT: "8084"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       DATASOURCE_SCHEMA_NAME: transfer_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=transfer_app
       SPRING_DATASOURCE_USERNAME: postgres
@@ -152,6 +156,7 @@ notification:
       port: 8085
     env:
       SERVER_PORT: "8085"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       DATASOURCE_SCHEMA_NAME: notification_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=notification_app
       SPRING_DATASOURCE_USERNAME: postgres

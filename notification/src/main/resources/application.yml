@@ -22,9 +22,18 @@ spring:
       enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT}
     listener:
       ack-mode: ${KAFKA_LISTENER_ACK_MODE}
+      observation-enabled: true
 
 spring.main:
   web-application-type: none
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_TRACING_ENDPOINT}
 
 integration:
   notification:

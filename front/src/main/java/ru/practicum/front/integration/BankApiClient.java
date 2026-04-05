@@ -3,12 +3,6 @@ package ru.practicum.front.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
 import ru.practicum.front.integration.account.api.AccountApi;
@@ -28,8 +22,9 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class BankApiClient {
 
-    private final ApiClientProperties properties;
-    private final OAuth2AuthorizedClientManager authorizedClientManager;
+    private final AccountApi accountApi;
+    private final CashApi cashApi;
+    private final TransferApi transferApi;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AccountResponse getCurrentAccount() {
@@ -83,45 +78,15 @@ public class BankApiClient {
     }
 
     private <T> T withAccountApi(ApiCall<T, AccountApi> call) {
-        ru.practicum.front.integration.account.client.ApiClient client =
-                new ru.practicum.front.integration.account.client.ApiClient()
-                        .setBasePath(properties.accountBaseUrl());
-        client.setBearerToken(resolveAccessToken());
-        return call.execute(new AccountApi(client));
+        return call.execute(accountApi);
     }
 
     private <T> T withCashApi(ApiCall<T, CashApi> call) {
-        ru.practicum.front.integration.cash.client.ApiClient client =
-                new ru.practicum.front.integration.cash.client.ApiClient()
-                        .setBasePath(properties.cashBaseUrl());
-        client.setBearerToken(resolveAccessToken());
-        return call.execute(new CashApi(client));
+        return call.execute(cashApi);
     }
 
     private <T> T withTransferApi(ApiCall<T, TransferApi> call) {
-        ru.practicum.front.integration.transfer.client.ApiClient client =
-                new ru.practicum.front.integration.transfer.client.ApiClient()
-                        .setBasePath(properties.transferBaseUrl());
-        client.setBearerToken(resolveAccessToken());
-        return call.execute(new TransferApi(client));
-    }
-
-    private String resolveAccessToken() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!(authentication instanceof OAuth2AuthenticationToken oauth2Token)) {
-            throw new IllegalStateException("OAuth2 authentication is required");
-        }
-
-        OAuth2AuthorizedClient client = authorizedClientManager.authorize(
-                OAuth2AuthorizeRequest.withClientRegistrationId(oauth2Token.getAuthorizedClientRegistrationId())
-                        .principal(oauth2Token)
-                        .build()
-        );
-
-        if (client == null || client.getAccessToken() == null || client.getAccessToken().getTokenValue() == null) {
-            throw new IllegalStateException("Access token is missing");
-        }
-        return client.getAccessToken().getTokenValue();
+        return call.execute(transferApi);
     }
 
     @FunctionalInterface

@@ -7,6 +7,7 @@ def bootProjects = ['front', 'account', 'cash', 'transfer', 'notification']
 def webProjects = ['front', 'account', 'cash', 'transfer']
 def openApiProjects = ['front', 'account', 'cash', 'transfer']
 def libraryProjects = ['common']
+def dbProjects = ['account', 'transfer', 'notification']
 
 version = '0.0.1-SNAPSHOT'
 description = 'my-bank-app'
@@ -67,9 +68,8 @@ configure(subprojects.findAll { it.name in bootProjects }) {
     dependencies {
         implementation libs.spring.boot.starter.actuator
         implementation libs.spring.boot.starter.log4j2
+        implementation libs.spring.boot.starter.zipkin
 
-        implementation libs.micrometer.tracing.bridge.brave
-        implementation libs.zipkin.reporter.brave
         implementation libs.micrometer.registry.prometheus
         implementation libs.log4j.layout.template.json
 
@@ -93,5 +93,11 @@ configure(subprojects.findAll { it.name in bootProjects }) {
         include '**/*IT.class'
         systemProperty 'spring.profiles.active', 'test'
         shouldRunAfter tasks.test
+    }
+}
+
+configure(subprojects.findAll { it.name in dbProjects }) {
+    dependencies {
+        implementation libs.datasource.micrometer.spring.boot
     }
 }

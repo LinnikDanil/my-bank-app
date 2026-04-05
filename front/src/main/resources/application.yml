@@ -24,6 +24,14 @@ spring:
 server:
   port: ${SERVER_PORT}
 
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_TRACING_ENDPOINT}
+
 front:
   api:
     account-base-url: ${FRONT_ACCOUNT_BASE_URL}

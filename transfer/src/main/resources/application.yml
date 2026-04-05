@@ -27,6 +27,8 @@ spring:
             token-uri: ${TRANSFER_OAUTH2_TOKEN_URI}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    template:
+      observation-enabled: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -37,6 +39,14 @@ spring:
 
 server:
   port: ${SERVER_PORT}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_TRACING_ENDPOINT}
 
 integration:
   oauth2:
