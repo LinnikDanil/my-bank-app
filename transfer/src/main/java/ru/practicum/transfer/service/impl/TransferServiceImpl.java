@@ -1,8 +1,10 @@
 package ru.practicum.transfer.service.impl;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.common.metrics.BusinessMetrics;
 import ru.practicum.transfer.domain.TransferRequest;
 import ru.practicum.transfer.domain.TransferResponse;
 import ru.practicum.transfer.domain.exception.AccountNotFoundException;
@@ -25,44 +27,54 @@ public class TransferServiceImpl implements TransferService {
 
     private final TransferAccountService transferAccountService;
     private final TransferPersistenceService transferPersistenceService;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public TransferResponse transfer(String usernameFrom, TransferRequest request) {
-        validateUsername(usernameFrom);
-        validateRequest(usernameFrom, request);
-
-        String usernameTo = request.getUsernameTo();
-        BigDecimal amount = request.getAmount();
-
-        log.info("Выполнение перевода: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
-
-        TransferEntity transfer = transferPersistenceService.createPendingTransfer(usernameFrom, usernameTo, amount);
         try {
-            transferAccountService.withdraw(usernameFrom, amount);
-        } catch (RuntimeException withdrawException) {
-            failTransferSafely(transfer.getId(), "Withdraw failed: " + withdrawException.getMessage());
-            throw withdrawException;
-        }
-        try {
-            transferAccountService.deposit(usernameTo, amount);
-        } catch (AccountNotFoundException
-                 | InvalidAmountException
-                 | InsufficientFundsException
-                 | UpstreamServiceException depositException) {
+            validateUsername(usernameFrom);
+            validateRequest(usernameFrom, request);
+
+            String usernameTo = request.getUsernameTo();
+            BigDecimal amount = request.getAmount();
+
+            log.info("Выполнение перевода: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
+
+            TransferEntity transfer = transferPersistenceService.createPendingTransfer(usernameFrom, usernameTo, amount);
             try {
-                transferPersistenceService.enqueueCompensation(transfer.getId(), depositException.getMessage());
-            } catch (RuntimeException compensationScheduleException) {
-                log.error("Не удалось запланировать компенсацию перевода: transferId={}", transfer.getId(), compensationScheduleException);
-                throw new UpstreamServiceException("Transfer failed and compensation scheduling failed. Manual intervention required.");
+                transferAccountService.withdraw(usernameFrom, amount);
+            } catch (RuntimeException withdrawException) {
+                failTransferSafely(transfer.getId(), "Withdraw failed: " + withdrawException.getMessage());
+                throw withdrawException;
             }
-            throw new UpstreamServiceException(
-                    "Transfer could not be completed. Compensation was scheduled asynchronously."
-            );
-        }
-        transferPersistenceService.markCompletedAndEnqueueNotification(transfer.getId());
+            try {
+                transferAccountService.deposit(usernameTo, amount);
+            } catch (AccountNotFoundException
+                     | InvalidAmountException
+                     | InsufficientFundsException
+                     | UpstreamServiceException depositException) {
+                try {
+                    transferPersistenceService.enqueueCompensation(transfer.getId(), depositException.getMessage());
+                } catch (RuntimeException compensationScheduleException) {
+                    log.error("Не удалось запланировать компенсацию перевода: transferId={}", transfer.getId(), compensationScheduleException);
+                    throw new UpstreamServiceException("Transfer failed and compensation scheduling failed. Manual intervention required.");
+                }
+                throw new UpstreamServiceException(
+                        "Transfer could not be completed. Compensation was scheduled asynchronously."
+                );
+            }
+            transferPersistenceService.markCompletedAndEnqueueNotification(transfer.getId());
 
-        log.info("Перевод выполнен: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
-        return new TransferResponse(usernameFrom, usernameTo, amount);
+            log.info("Перевод выполнен: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
+            return new TransferResponse(usernameFrom, usernameTo, amount);
+        } catch (RuntimeException ex) {
+            meterRegistry.counter(
+                    BusinessMetrics.TRANSFER_FAILURES,
+                    BusinessMetrics.USERNAME_FROM, usernameFrom,
+                    BusinessMetrics.USERNAME_TO, request.getUsernameTo()
+            ).increment();
+            throw ex;
+        }
     }
 
     private void validateUsername(String username) {
