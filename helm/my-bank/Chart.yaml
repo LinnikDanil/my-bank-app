@@ -30,3 +30,21 @@ dependencies:
   - name: kafka
     version: "18.0.1"
     repository: https://helm-charts.itboon.top/kafka
+  - name: zipkin
+    version: "0.4.0"
+    repository: https://zipkin.io/zipkin-helm
+  - name: prometheus
+    version: "28.7.0"
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    version: "10.4.0"
+    repository: https://grafana.github.io/helm-charts
+  - name: elasticsearch
+    version: "19.21.2"
+    repository: oci://registry-1.docker.io/bitnamicharts
+  - name: logstash
+    version: 0.1.0
+    repository: file://charts/logstash
+  - name: kibana
+    version: "12.1.10"
+    repository: oci://registry-1.docker.io/bitnamicharts

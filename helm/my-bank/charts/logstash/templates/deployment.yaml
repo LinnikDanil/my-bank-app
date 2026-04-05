@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "logstash.name" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "logstash.name" . }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "logstash.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "logstash.name" . }}
+    spec:
+      containers:
+        - name: logstash
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            - name: beats
+              containerPort: {{ .Values.app.service.ports.beats }}
+            - name: api
+              containerPort: {{ .Values.app.service.ports.api }}
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/logstash/config/logstash.yml
+              subPath: logstash.yml
+            - name: config
+              mountPath: /usr/share/logstash/pipeline/logstash.conf
+              subPath: logstash.conf
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "logstash.name" . }}-config

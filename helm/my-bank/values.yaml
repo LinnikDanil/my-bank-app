@@ -312,3 +312,156 @@ kafkaTopic:
       repository: kafkace/kafka
       tag: v3.7.1-63ba8d2
       pullPolicy: IfNotPresent
+
+zipkin:
+  fullnameOverride: zipkin
+  replicaCount: 1
+  zipkin:
+    storage:
+      type: mem
+  ingress:
+    enabled: true
+    className: nginx
+    host: zipkin.localhost
+    path: /
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+prometheus:
+  alertmanager:
+    enabled: true
+    persistentVolume:
+      enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  server:
+    persistentVolume:
+      enabled: false
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - prometheus.localhost
+      path: /
+      pathType: Prefix
+    resources:
+      requests:
+        cpu: 150m
+        memory: 512Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+
+grafana:
+  fullnameOverride: grafana
+  persistence:
+    enabled: false
+  adminUser: admin
+  adminPassword: admin
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.localhost
+    path: /
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+elasticsearch:
+  fullnameOverride: elasticsearch
+  security:
+    enabled: false
+  master:
+    masterOnly: false
+    replicaCount: 1
+    heapSize: 512m
+    persistence:
+      enabled: true
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  data:
+    replicaCount: 0
+  coordinating:
+    replicaCount: 0
+  ingest:
+    replicaCount: 0
+
+logstash:
+  app:
+    replicaCount: 1
+    image:
+      repository: docker.elastic.co/logstash/logstash
+      tag: 8.5.1
+      pullPolicy: IfNotPresent
+    service:
+      ports:
+        beats: 5044
+        api: 9600
+    pipeline: |
+      input {
+        tcp {
+          port => 5044
+          codec => json_lines
+        }
+      }
+      output {
+        stdout {
+          codec => rubydebug
+        }
+      }
+    config: |
+      http.host: 0.0.0.0
+      xpack.monitoring.enabled: false
+      pipeline.ordered: auto
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+
+kibana:
+  fullnameOverride: kibana
+  replicaCount: 1
+  persistence:
+    enabled: false
+  elasticsearch:
+    hosts:
+      - elasticsearch
+    port: 9200
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: kibana.localhost
+    path: /
+    pathType: Prefix
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi

@@ -1,0 +1,40 @@
+app:
+  nameOverride: logstash
+
+  replicaCount: 1
+
+  image:
+    repository: docker.elastic.co/logstash/logstash
+    tag: 8.5.1
+    pullPolicy: IfNotPresent
+
+  service:
+    ports:
+      beats: 5044
+      api: 9600
+
+  config: |
+    http.host: 0.0.0.0
+    xpack.monitoring.enabled: false
+    pipeline.ordered: auto
+
+  pipeline: |
+    input {
+      tcp {
+        port => 5044
+        codec => json_lines
+      }
+    }
+    output {
+      stdout {
+        codec => rubydebug
+      }
+    }
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi

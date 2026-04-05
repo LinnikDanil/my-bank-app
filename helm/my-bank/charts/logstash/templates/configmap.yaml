@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logstash.name" . }}-config
+data:
+  logstash.yml: |
+{{ .Values.app.config | indent 4 }}
+  logstash.conf: |
+{{ .Values.app.pipeline | indent 4 }}
