@@ -60,13 +60,13 @@
       },
       "targets": [
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{area=\"heap\"})",
-          "legendFormat": "heap {{instance}}",
+          "expr": "sum by (svc) (label_replace(jvm_memory_used_bytes{service=~\"front|account|cash|transfer|notification\",area=\"heap\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_memory_used_bytes{job=~\"front|account|cash|transfer|notification\",area=\"heap\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "heap {{svc}}",
           "refId": "A"
         },
         {
-          "expr": "sum by (instance) (jvm_memory_used_bytes{area=\"nonheap\"})",
-          "legendFormat": "non-heap {{instance}}",
+          "expr": "sum by (svc) (label_replace(jvm_memory_used_bytes{service=~\"front|account|cash|transfer|notification\",area=\"nonheap\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_memory_used_bytes{job=~\"front|account|cash|transfer|notification\",area=\"nonheap\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "non-heap {{svc}}",
           "refId": "B"
         }
       ],
@@ -113,8 +113,8 @@
       },
       "targets": [
         {
-          "expr": "process_cpu_usage",
-          "legendFormat": "{{instance}}",
+          "expr": "avg by (svc) (label_replace(process_cpu_usage{service=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(process_cpu_usage{job=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
           "refId": "A"
         }
       ],
@@ -160,8 +160,8 @@
       },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads",
-          "legendFormat": "{{instance}}",
+          "expr": "max by (svc) (label_replace(jvm_threads_live_threads{service=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_threads_live_threads{job=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
           "refId": "A"
         }
       ],
@@ -208,8 +208,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (instance) (rate(jvm_gc_pause_seconds_count[$__rate_interval]))",
-          "legendFormat": "{{instance}}",
+          "expr": "sum by (svc) (label_replace(rate(jvm_gc_pause_seconds_count{service=~\"front|account|cash|transfer|notification\"}[$__rate_interval]), \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(rate(jvm_gc_pause_seconds_count{job=~\"front|account|cash|transfer|notification\"}[$__rate_interval]), \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
           "refId": "A"
         }
       ],
@@ -235,6 +235,6 @@
   "timezone": "",
   "title": "My Bank JVM Overview",
   "uid": "my-bank-jvm",
-  "version": 1,
+  "version": 4,
   "weekStart": ""
 }

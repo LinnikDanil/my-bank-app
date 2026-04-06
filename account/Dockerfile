@@ -40,6 +40,6 @@ EXPOSE 8082
 USER appuser
 
 # JVM-оптимизации для контейнеров
-ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

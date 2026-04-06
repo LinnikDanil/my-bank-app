@@ -31,11 +31,12 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     public TransferResponse transfer(String usernameFrom, TransferRequest request) {
+        String usernameTo = request != null ? request.getUsernameTo() : null;
         try {
             validateUsername(usernameFrom);
             validateRequest(usernameFrom, request);
 
-            String usernameTo = request.getUsernameTo();
+            usernameTo = request.getUsernameTo();
             BigDecimal amount = request.getAmount();
 
             log.info("Выполнение перевода: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
@@ -68,11 +69,13 @@ public class TransferServiceImpl implements TransferService {
             log.info("Перевод выполнен: usernameFrom={}, usernameTo={}, amount={}", usernameFrom, usernameTo, amount);
             return new TransferResponse(usernameFrom, usernameTo, amount);
         } catch (RuntimeException ex) {
-            meterRegistry.counter(
-                    BusinessMetrics.TRANSFER_FAILURES,
-                    BusinessMetrics.USERNAME_FROM, usernameFrom,
-                    BusinessMetrics.USERNAME_TO, request.getUsernameTo()
-            ).increment();
+            if (hasText(usernameFrom) && hasText(usernameTo)) {
+                meterRegistry.counter(
+                        BusinessMetrics.TRANSFER_FAILURES,
+                        BusinessMetrics.USERNAME_FROM, usernameFrom,
+                        BusinessMetrics.USERNAME_TO, usernameTo
+                ).increment();
+            }
             throw ex;
         }
     }
@@ -106,5 +109,9 @@ public class TransferServiceImpl implements TransferService {
         } catch (RuntimeException markFailedException) {
             log.error("Не удалось перевести transfer в FAILED: transferId={}", transferId, markFailedException);
         }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

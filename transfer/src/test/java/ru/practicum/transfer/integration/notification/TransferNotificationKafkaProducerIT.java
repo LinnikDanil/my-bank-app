@@ -2,6 +2,7 @@ package ru.practicum.transfer.integration.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -22,6 +23,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import ru.practicum.common.config.CommonJacksonAutoConfiguration;
 import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.tracing.TraceContextSupport;
 import ru.practicum.transfer.integration.notification.service.impl.TransferNotificationServiceImpl;
 
 import java.math.BigDecimal;
@@ -63,7 +65,13 @@ class TransferNotificationKafkaProducerIT {
         ).createConsumer()) {
             consumerForTest.subscribe(List.of(TOPIC));
 
-            producer.notifyTransferCompleted("ivanivanov", "petrpetrov", new BigDecimal("75.00"));
+            ThreadContext.put(TraceContextSupport.TRACE_ID, "00112233445566778899aabbccddeeff");
+            ThreadContext.put(TraceContextSupport.SPAN_ID, "0011223344556677");
+            try {
+                producer.notifyTransferCompleted("ivanivanov", "petrpetrov", new BigDecimal("75.00"));
+            } finally {
+                ThreadContext.clearAll();
+            }
 
             ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumerForTest, TOPIC, Duration.ofSeconds(5));
             NotificationEvent event = objectMapper.readValue(record.value(), NotificationEvent.class);
@@ -72,6 +80,12 @@ class TransferNotificationKafkaProducerIT {
             assertThat(event.getPayload().getUsernameFrom()).isEqualTo("ivanivanov");
             assertThat(event.getPayload().getUsernameTo()).isEqualTo("petrpetrov");
             assertThat(event.getPayload().getAmount()).isEqualByComparingTo("75.00");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACE_ID).value()))
+                    .isEqualTo("00112233445566778899aabbccddeeff");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.SPAN_ID).value()))
+                    .isEqualTo("0011223344556677");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACEPARENT).value()))
+                    .isEqualTo("00-00112233445566778899aabbccddeeff-0011223344556677-01");
         }
     }
 

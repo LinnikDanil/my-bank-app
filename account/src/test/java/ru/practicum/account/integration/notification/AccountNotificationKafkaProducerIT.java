@@ -2,6 +2,7 @@ package ru.practicum.account.integration.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -26,6 +27,7 @@ import ru.practicum.account.domain.model.Account;
 import ru.practicum.account.integration.notification.service.impl.AccountNotificationServiceImpl;
 import ru.practicum.common.config.CommonJacksonAutoConfiguration;
 import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.tracing.TraceContextSupport;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -74,7 +76,14 @@ class AccountNotificationKafkaProducerIT {
                     .balance(new BigDecimal("100.00"))
                     .build();
 
-            producer.notifyAccountUpdated(account);
+            ThreadContext.put(TraceContextSupport.TRACE_ID, "0123456789abcdef0123456789abcdef");
+            ThreadContext.put(TraceContextSupport.SPAN_ID, "0123456789abcdef");
+
+            try {
+                producer.notifyAccountUpdated(account);
+            } finally {
+                ThreadContext.clearAll();
+            }
 
             ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumerForTest, TOPIC, Duration.ofSeconds(5));
             MatcherAssert.assertThat(record, KafkaMatchers.hasValue(record.value()));
@@ -82,6 +91,12 @@ class AccountNotificationKafkaProducerIT {
             NotificationEvent event = objectMapper.readValue(record.value(), NotificationEvent.class);
             assertThat(event.getEventType().name()).isEqualTo("ACCOUNT_UPDATED");
             assertThat(event.getPayload().getUsername()).isEqualTo("ivanivanov");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACE_ID).value()))
+                    .isEqualTo("0123456789abcdef0123456789abcdef");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.SPAN_ID).value()))
+                    .isEqualTo("0123456789abcdef");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACEPARENT).value()))
+                    .isEqualTo("00-0123456789abcdef0123456789abcdef-0123456789abcdef-01");
         }
     }
 

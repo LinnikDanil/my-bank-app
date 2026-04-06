@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - api_version: v2
+      scheme: http
+      static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+rule_files:
+  - /etc/prometheus/alerting_rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: front
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - front-app:8086
+
+  - job_name: account
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - account-app:8082
+
+  - job_name: cash
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - cash-app:8083
+
+  - job_name: transfer
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - transfer-app:8084
+
+  - job_name: notification
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - notification-app:8085

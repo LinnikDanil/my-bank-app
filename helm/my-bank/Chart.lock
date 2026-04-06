@@ -39,7 +39,7 @@ dependencies:
   repository: file://charts/logstash
   version: 0.1.0
 - name: kibana
-  repository: oci://registry-1.docker.io/bitnamicharts
+  repository: file://charts/kibana-local
   version: 12.1.10
-digest: sha256:d447cbf305a6bfa19a2ccce708cb3f46e6318608581d07e2f05577236907f10e
-generated: "2026-04-05T14:02:37.657433+03:00"
+digest: sha256:1a7a0f023deb0809a2b71e22de5dbd1e9d3f43de3f27eb0c429cd157ed0c93bd
+generated: "2026-04-06T09:59:02.63668+03:00"

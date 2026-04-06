@@ -59,12 +59,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"my-bank-apps\"}[$__rate_interval]))",
-          "legendFormat": "{{instance}}",
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
           "refId": "A"
         }
       ],
-      "title": "HTTP RPS by Service",
+      "title": "HTTP Requests by Service",
       "type": "timeseries"
     },
     {
@@ -106,17 +106,17 @@
       },
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"my-bank-apps\",status=~\"4..\"}[$__rate_interval]))",
-          "legendFormat": "4xx {{instance}}",
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",status=~\"4..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",status=~\"4..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "4xx {{svc}}",
           "refId": "A"
         },
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"my-bank-apps\",status=~\"5..\"}[$__rate_interval]))",
-          "legendFormat": "5xx {{instance}}",
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",status=~\"5..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",status=~\"5..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "5xx {{svc}}",
           "refId": "B"
         }
       ],
-      "title": "HTTP 4xx / 5xx by Service",
+      "title": "HTTP 4xx / 5xx Totals by Service",
       "type": "timeseries"
     },
     {
@@ -159,18 +159,18 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, sum by (le, instance) (rate(http_server_requests_seconds_bucket{job=\"my-bank-apps\"}[$__rate_interval])))",
-          "legendFormat": "p50 {{instance}}",
+          "expr": "histogram_quantile(0.5, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p50 {{svc}}",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate(http_server_requests_seconds_bucket{job=\"my-bank-apps\"}[$__rate_interval])))",
-          "legendFormat": "p95 {{instance}}",
+          "expr": "histogram_quantile(0.95, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p95 {{svc}}",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum by (le, instance) (rate(http_server_requests_seconds_bucket{job=\"my-bank-apps\"}[$__rate_interval])))",
-          "legendFormat": "p99 {{instance}}",
+          "expr": "histogram_quantile(0.99, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p99 {{svc}}",
           "refId": "C"
         }
       ],
@@ -217,8 +217,8 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate(http_client_requests_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "p95 {{instance}}",
+          "expr": "histogram_quantile(0.95, sum by (le, svc) (label_replace(http_client_requests_seconds_bucket{service=~\"front|cash|transfer\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_client_requests_seconds_bucket{job=~\"front|cash|transfer\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p95 {{svc}}",
           "refId": "A"
         }
       ],
@@ -244,6 +244,6 @@
   "timezone": "",
   "title": "My Bank HTTP Overview",
   "uid": "my-bank-http",
-  "version": 1,
+  "version": 5,
   "weekStart": ""
 }

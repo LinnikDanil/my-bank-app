@@ -26,6 +26,7 @@
 | `kafka` | Брокер сообщений | `9092` |
 | `zipkin` | Распределённый трейсинг | `9411` |
 | `prometheus` | Сбор метрик и alert rules | `80` |
+| `alertmanager` | Обработка alert-событий Prometheus | `9093` |
 | `grafana` | Дашборды метрик | `80` |
 | `elasticsearch` | Хранилище логов | `9200` |
 | `logstash` | Приём и обработка логов | `5044` / `9600` |
@@ -133,6 +134,8 @@ Prometheus собирает метрики со всех приложений п
   - `bank_cash_withdraw_failures_total` — неуспешные снятия по `username`;
   - `bank_transfer_failures_total` — неуспешные переводы по `username_from` и `username_to`.
 
+Примечание: пункт про метрику и алерт по невозможности отправки уведомления сервисом `notification` не реализован осознанно, так как уведомления в текущей реализации записываются в логи, и отдельные ошибочные метрики/алерты для этого сценария не добавлялись.
+
 ### Дашборды Grafana
 
 В Grafana автоматически провиженятся три дашборда в папке `My Bank`:
@@ -172,10 +175,16 @@ Prometheus собирает метрики со всех приложений п
 - `MyBankCashWithdrawFailures` — всплеск неуспешных снятий;
 - `MyBankTransferFailures` — всплеск неуспешных переводов.
 
+Примечание: отдельный алерт по невозможности отправки уведомления сервисом `notification` не настраивался (уведомления логируются, без выделения отдельной error-метрики под алертинг).
+
 Как посмотреть:
 - откройте Prometheus;
 - перейдите в `Alerts`;
 - смотрите состояние правил (`inactive`, `pending`, `firing`).
+
+Адреса:
+- Kubernetes (через ingress): Prometheus — [http://prometheus.localhost](http://prometheus.localhost)
+- Docker Compose: Prometheus — [http://localhost:9090](http://localhost:9090), Alertmanager — [http://localhost:9093](http://localhost:9093)
 
 ### Логи
 
@@ -203,8 +212,7 @@ Logstash:
 Как пользоваться:
 - откройте Kibana;
 - перейдите в `Discover`;
-- используйте готовый data view `bank-logs-*`;
-- для быстрого старта доступен сохранённый поиск `Bank Logs`;
+- data view `bank-logs-*` и сохранённый поиск `Bank Logs` импортируются автоматически при старте Kibana;
 - фильтруйте по `service`, `level`, `traceId`, `spanId`.
 
 Примеры KQL-запросов:
@@ -239,11 +247,12 @@ traceId : "ВАШ_TRACE_ID"
 Из корня проекта:
 
 ```bash
-docker build -f front/Dockerfile -t front-app:1.3.0 .
-docker build -f account/Dockerfile -t account-app:1.3.0 .
-docker build -f cash/Dockerfile -t cash-app:1.3.0 .
-docker build -f transfer/Dockerfile -t transfer-app:1.3.0 .
-docker build -f notification/Dockerfile -t notification-app:1.3.0 .
+docker build -f front/Dockerfile -t front-app:1.3.8 .
+docker build -f account/Dockerfile -t account-app:1.3.8 .
+docker build -f cash/Dockerfile -t cash-app:1.3.8 .
+docker build -f transfer/Dockerfile -t transfer-app:1.3.8 .
+docker build -f notification/Dockerfile -t notification-app:1.3.8 .
+docker build -f logstash/Dockerfile -t my-bank-logstash:1.0.0 .
 ```
 
 ### 2. Установка ingress-nginx
@@ -302,7 +311,7 @@ helm uninstall my-bank
 
 ## Локальный запуск без Kubernetes
 
-Для базовой локальной разработки можно использовать Docker Compose:
+Для локального запуска полного стенда (включая observability и alerting) можно использовать Docker Compose:
 
 ```bash
 docker compose up -d --build
@@ -311,6 +320,11 @@ docker compose up -d --build
 Доступно:
 - Front UI: [http://localhost:8086](http://localhost:8086)
 - Keycloak: [http://localhost:8080](http://localhost:8080)
+- Zipkin: [http://localhost:9411](http://localhost:9411)
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Alertmanager: [http://localhost:9093](http://localhost:9093)
+- Grafana: [http://localhost:3000](http://localhost:3000)
+- Kibana: [http://localhost:5601](http://localhost:5601)
 
 Остановка:
 
@@ -324,7 +338,7 @@ docker compose down
 docker compose down -v
 ```
 
-Важно: основной observability-сценарий этого спринта описан и поддерживается именно для Kubernetes + Helm.
+Для Docker Compose и Kubernetes + Helm используются одинаковые метрики, дашборды и alert rules.
 
 ## Учётные данные
 

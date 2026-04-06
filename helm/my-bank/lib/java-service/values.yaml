@@ -15,6 +15,17 @@ service:
 env: {}
 secretEnv: {}
 
+waitForDependencies:
+  enabled: false
+  image:
+    repository: docker.io/bitnamilegacy/keycloak
+    tag: 26.3.3-debian-12-r0
+    pullPolicy: IfNotPresent
+  timeoutSeconds: 5
+  maxAttempts: 180
+  sleepSeconds: 2
+  checks: []
+
 probes:
   startup:
     enabled: true

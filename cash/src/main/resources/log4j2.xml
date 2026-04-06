@@ -4,8 +4,8 @@
         <Property name="serviceName">cash</Property>
         <Property name="logstashHost">${env:LOGSTASH_HOST:-logstash}</Property>
         <Property name="logstashPort">${env:LOGSTASH_PORT:-5044}</Property>
-        <Property name="consolePattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c{1.} traceId=%X{traceId:-} spanId=%X{spanId:-} - %msg%n%notEmpty{%xEx}</Property>
-        <Property name="jsonPattern">{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}","service":"${serviceName}","level":"%p","thread":"%t","logger":"%c{1.}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","message":"%enc{%m}{JSON}","exception":"%notEmpty{%enc{%xEx}{JSON}}" }%n</Property>
+        <Property name="consolePattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c{1.} traceId=%X{traceId} spanId=%X{spanId} - %msg%n%notEmpty{%xEx}</Property>
+        <Property name="jsonPattern">{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}","service":"${serviceName}","level":"%p","thread":"%t","logger":"%c{1.}","traceId":"%X{traceId}","spanId":"%X{spanId}","message":"%enc{%m}{JSON}","exception":"%notEmpty{%enc{%xEx}{JSON}}" }%n</Property>
     </Properties>
 
     <Appenders>
@@ -18,7 +18,8 @@
                 port="${logstashPort}"
                 protocol="TCP"
                 connectTimeoutMillis="2000"
-                immediateFail="true"
+                reconnectDelayMillis="5000"
+                immediateFail="false"
                 ignoreExceptions="true">
             <PatternLayout charset="UTF-8" pattern="${jsonPattern}"/>
         </Socket>

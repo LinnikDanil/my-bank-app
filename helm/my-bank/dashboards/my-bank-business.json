@@ -29,7 +29,8 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -41,23 +42,33 @@
       },
       "id": 1,
       "options": {
+        "displayMode": "basic",
         "legend": {
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom"
         },
-        "tooltip": {
-          "mode": "multi"
-        }
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto"
       },
       "targets": [
         {
-          "expr": "sum by (username) (increase(bank_cash_deposit_failures_total[$__rate_interval]))",
+          "expr": "sum by (username) (bank_cash_deposit_failures_total)",
+          "instant": true,
           "legendFormat": "{{username}}",
           "refId": "A"
         }
       ],
       "title": "Failed Deposits by Username",
-      "type": "barchart"
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -68,7 +79,8 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -80,23 +92,33 @@
       },
       "id": 2,
       "options": {
+        "displayMode": "basic",
         "legend": {
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom"
         },
-        "tooltip": {
-          "mode": "multi"
-        }
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto"
       },
       "targets": [
         {
-          "expr": "sum by (username) (increase(bank_cash_withdraw_failures_total[$__rate_interval]))",
+          "expr": "sum by (username) (bank_cash_withdraw_failures_total)",
+          "instant": true,
           "legendFormat": "{{username}}",
           "refId": "A"
         }
       ],
       "title": "Failed Withdrawals by Username",
-      "type": "barchart"
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -106,7 +128,26 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           }
         },
         "overrides": []
@@ -126,7 +167,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (username_from, username_to) (increase(bank_transfer_failures_total[$__rate_interval]))",
+          "expr": "sum by (username_from, username_to) (bank_transfer_failures_total)",
           "format": "table",
           "instant": true,
           "legendFormat": "{{username_from}} -> {{username_to}}",
@@ -163,6 +204,6 @@
   "timezone": "",
   "title": "My Bank Business Metrics",
   "uid": "my-bank-business",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

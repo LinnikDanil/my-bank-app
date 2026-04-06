@@ -4,9 +4,12 @@ app:
   replicaCount: 1
 
   image:
-    repository: docker.elastic.co/logstash/logstash
-    tag: 8.5.1
+    repository: my-bank-logstash
+    tag: 1.0.0
     pullPolicy: IfNotPresent
+
+  env:
+    LS_JAVA_OPTS: "-Xms256m -Xmx256m"
 
   service:
     ports:

@@ -6,16 +6,19 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.practicum.common.notification.NotificationEvent;
 import ru.practicum.common.notification.NotificationEventPayload;
 import ru.practicum.common.notification.NotificationEventType;
+import ru.practicum.common.tracing.TraceContextSupport;
 import ru.practicum.transfer.domain.exception.UpstreamServiceException;
 import ru.practicum.transfer.integration.notification.service.TransferNotificationService;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -57,7 +60,13 @@ public class TransferNotificationServiceImpl implements TransferNotificationServ
 
         try {
             String eventJson = objectMapper.writeValueAsString(event);
-            var sendResult = kafkaTemplate.send(notificationTopic, event.getEventId().toString(), eventJson).get();
+            ProducerRecord<String, String> record = new ProducerRecord<>(
+                    notificationTopic,
+                    event.getEventId().toString(),
+                    eventJson
+            );
+            addTraceHeaders(record);
+            var sendResult = kafkaTemplate.send(record).get();
             if (sendResult != null && sendResult.getRecordMetadata() != null) {
                 log.info("Событие отправлено в Kafka: eventId={}, type={}, partition={}, offset={}",
                         event.getEventId(),
@@ -75,6 +84,26 @@ public class TransferNotificationServiceImpl implements TransferNotificationServ
         } catch (ExecutionException e) {
             throw new UpstreamServiceException("Не удалось отправить notification-событие в Kafka");
         }
+    }
+
+    private void addTraceHeaders(ProducerRecord<String, String> record) {
+        TraceContextSupport.TraceHeaders traceHeaders = TraceContextSupport.currentTraceHeaders();
+        if (!traceHeaders.isPresent()) {
+            return;
+        }
+
+        record.headers().add(
+                TraceContextSupport.TRACE_ID,
+                traceHeaders.traceId().getBytes(StandardCharsets.UTF_8)
+        );
+        record.headers().add(
+                TraceContextSupport.SPAN_ID,
+                traceHeaders.spanId().getBytes(StandardCharsets.UTF_8)
+        );
+        record.headers().add(
+                TraceContextSupport.TRACEPARENT,
+                traceHeaders.traceparent().getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     private void notifyTransferCompletedFallback(String usernameFrom,

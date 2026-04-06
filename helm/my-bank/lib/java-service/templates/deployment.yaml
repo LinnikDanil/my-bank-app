@@ -14,6 +14,35 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "java-service.name" . }}
     spec:
+      {{- if and .Values.waitForDependencies.enabled .Values.waitForDependencies.checks }}
+      initContainers:
+        - name: wait-for-dependencies
+          image: "{{ .Values.waitForDependencies.image.repository }}:{{ .Values.waitForDependencies.image.tag }}"
+          imagePullPolicy: {{ .Values.waitForDependencies.image.pullPolicy }}
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              wait_tcp() {
+                local name="$1"
+                local host="$2"
+                local port="$3"
+                local attempt=0
+                until timeout {{ .Values.waitForDependencies.timeoutSeconds }} bash -c "cat < /dev/null > /dev/tcp/${host}/${port}"; do
+                  attempt=$((attempt + 1))
+                  if [ "$attempt" -ge {{ .Values.waitForDependencies.maxAttempts }} ]; then
+                    echo "Timeout waiting for ${name} (${host}:${port})"
+                    return 1
+                  fi
+                  echo "Waiting for ${name} (${host}:${port}), attempt ${attempt}"
+                  sleep {{ .Values.waitForDependencies.sleepSeconds }}
+                done
+                echo "${name} is reachable (${host}:${port})"
+              }
+
+              {{- range .Values.waitForDependencies.checks }}
+              wait_tcp "{{ .name }}" "{{ .host }}" "{{ .port }}"
+              {{- end }}
+      {{- end }}
       containers:
         - name: {{ include "java-service.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

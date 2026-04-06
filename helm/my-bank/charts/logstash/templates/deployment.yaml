@@ -18,6 +18,11 @@ spec:
         - name: logstash
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
           imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          env:
+            {{- range $name, $value := .Values.app.env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
           ports:
             - name: beats
               containerPort: {{ .Values.app.service.ports.beats }}

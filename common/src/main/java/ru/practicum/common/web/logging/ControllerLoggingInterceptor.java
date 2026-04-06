@@ -1,9 +1,11 @@
 package ru.practicum.common.web.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.HandlerInterceptor;
+import ru.practicum.common.tracing.TraceContextSupport;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,10 +32,12 @@ public class ControllerLoggingInterceptor implements HandlerInterceptor {
     private static final Set<String> SENSITIVE_HEADERS = Set.of("authorization", "cookie", "set-cookie");
 
     private final ObjectMapper objectMapper;
+    private final Tracer tracer;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
+            populateTraceContext(request);
             Map<String, List<String>> headers = extractHeaders(request);
             String body = extractBody(request);
 
@@ -52,6 +56,15 @@ public class ControllerLoggingInterceptor implements HandlerInterceptor {
             log.debug("Ошибка логирования HTTP-запроса: {}", e.getMessage(), e);
         }
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        TraceContextSupport.clearMdc();
+    }
+
+    private void populateTraceContext(HttpServletRequest request) {
+        TraceContextSupport.populateMdc(tracer, request.getHeader(TraceContextSupport.TRACEPARENT));
     }
 
     private Map<String, List<String>> extractHeaders(HttpServletRequest request) {

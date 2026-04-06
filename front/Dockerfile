@@ -4,13 +4,15 @@
 FROM gradle:9.3.1-jdk25 AS builder
 WORKDIR /app
 
-# Копируем Gradle wrapper и build-файлы только root-проекта и front, чтобы слой зависимостей меньше инвалидировался
+# Копируем Gradle wrapper и build-файлы root/front/common, чтобы front мог собрать зависимость project(':common')
 COPY gradle gradle
 COPY gradlew build.gradle settings.gradle ./
 RUN mkdir -p common account cash front notification transfer
 COPY front/build.gradle front/build.gradle
+COPY common/build.gradle common/build.gradle
 
-# Копируем исходники и OpenAPI-спецификации, нужные для генерации клиентов front
+# Копируем исходники common/front и OpenAPI-спецификации, нужные для генерации клиентов front
+COPY common/src common/src
 COPY front/src front/src
 COPY openapi openapi
 
@@ -38,6 +40,6 @@ EXPOSE 8086
 USER appuser
 
 # JVM-оптимизации для контейнеров
-ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

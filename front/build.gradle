@@ -1,9 +1,10 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
-version = '1.3.0'
+version = '1.3.8'
 description = 'front'
 
 dependencies {
+    implementation project(':common')
     implementation libs.spring.boot.starter.thymeleaf
     implementation libs.spring.boot.starter.security
     implementation libs.spring.boot.starter.oauth2.client
