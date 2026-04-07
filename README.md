@@ -1,6 +1,44 @@
 # My Bank App
 
-Микросервисное приложение «Банк» для проектной работы 12 спринта.
+Микросервисный banking-проект, в котором я собрал не только бизнес-функции, но и production-oriented практики: устойчивые интеграции, безопасность, компенсационные сценарии, observability и инфраструктуру поставки. Это проект не только про "переводы и счета", а про то, как выглядит зрелая backend-система, которую можно развивать, сопровождать и диагностировать.
+
+## Технологии
+
+- Java 25
+- Spring Boot 4, Spring Security, Spring OAuth2 Client / Resource Server
+- Spring Data JPA, Hibernate, Liquibase
+- Spring Kafka
+- Resilience4j
+- Micrometer, Spring Boot Actuator
+- Micrometer Tracing + Zipkin
+- Prometheus + Grafana
+- Log4j2 + Logstash + Elasticsearch + Kibana
+- PostgreSQL
+- Docker, Kubernetes, Helm
+- JUnit 5, Spring Boot Test, Testcontainers, Embedded Kafka
+
+## Почему проект важен
+
+- Показывает проектирование микросервисной системы целиком, а не отдельного CRUD-сервиса.
+- Демонстрирует работу с distributed flows: синхронные вызовы, Kafka-события, compensation и outbox.
+- Подтверждает опыт с security, observability и k8s-ready инфраструктурой.
+- Отражает эволюцию архитектуры по веткам, включая этап со `Spring Cloud`.
+
+## Ключевые инженерные решения
+
+- В `transfer` реализован saga-like orchestration flow для перевода денег: списание, попытка зачисления, компенсация при сбое и фиксация финального статуса операции.
+- Для асинхронных действий используется transactional outbox: событие сохраняется вместе с бизнес-состоянием, а затем обрабатывается отдельным worker-процессом с retry, backoff и dead-state.
+- Межсервисная безопасность построена на OAuth2/JWT, пользовательский вход и machine-to-machine интеграции разделены и настроены явно.
+- Интеграции усилены Resilience4j: retry, circuit breaker и нормализация ошибок внешних сервисов.
+- Взаимодействие сервисов оформлено через OpenAPI-контракты и generated clients, а не через неявные ручные интеграции.
+
+## Эволюция проекта по веткам
+
+- `module_3_sprint_9`: Spring Cloud, `gateway`, Consul Discovery и Consul Config.
+- `module_3_sprint_10`-`module_3_sprint_11`: развитие микросервисной логики, Kafka, security и тестового контура.
+- `module_3_sprint_12`: observability-стек, business metrics, dashboards, alerts, ELK и Kubernetes-полировка.
+
+## Архитектура
 
 Проект включает:
 - `front` с HTML UI и OAuth2 Login через Keycloak;
@@ -9,8 +47,6 @@
 - PostgreSQL для хранения данных;
 - observability-стек: Zipkin, Prometheus, Grafana, Elasticsearch, Logstash, Kibana;
 - развёртывание в Kubernetes через umbrella Helm chart.
-
-## Архитектура
 
 ### Сервисы
 
@@ -81,19 +117,6 @@ flowchart LR
   Prometheus --> Grafana
   Elasticsearch --> Kibana
 ```
-
-## Технологии
-
-- Java 25
-- Spring Boot, Spring Security, Spring OAuth2 Client / Resource Server
-- Spring Data JPA, Hibernate, Liquibase
-- Spring Kafka
-- Micrometer, Spring Boot Actuator
-- Micrometer Tracing + Zipkin
-- Prometheus + Grafana
-- Log4j2 + Logstash + Elasticsearch + Kibana
-- PostgreSQL
-- Docker, Kubernetes, Helm
 
 ## Observability
 
@@ -175,7 +198,7 @@ Prometheus собирает метрики со всех приложений п
 - `MyBankCashWithdrawFailures` — всплеск неуспешных снятий;
 - `MyBankTransferFailures` — всплеск неуспешных переводов.
 
-Примечание: отдельный алерт по невозможности отправки уведомления сервисом `notification` не настраивался (уведомления логируются, без выделения отдельной error-метрики под алертинг).
+Примечание: отдельный алерт по невозможности отправки уведомления сервисом `notification` не настраивался.
 
 Как посмотреть:
 - откройте Prometheus;
