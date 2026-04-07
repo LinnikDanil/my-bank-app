@@ -1,0 +1,67 @@
+groups:
+  - name: my-bank-http
+    rules:
+      - alert: MyBankServiceDown
+        expr: up{job=~"front|account|cash|transfer|notification"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Сервис my-bank недоступен"
+          description: "Prometheus не может получить метрики с сервиса {{ $labels.job }} более 2 минут."
+
+      - alert: MyBankHighHttp5xxRate
+        expr: sum by (job) (rate(http_server_requests_seconds_count{job=~"front|account|cash|transfer|notification",status=~"5..",uri!~"/actuator.*"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Повышенный уровень 5xx"
+          description: "На сервисе {{ $labels.job }} уровень 5xx превышает порог 0.05 RPS в течение 5 минут."
+
+      - alert: MyBankHighHttpP95Latency
+        expr: histogram_quantile(0.95, sum by (le, job) (rate(http_server_requests_seconds_bucket{job=~"front|account|cash|transfer|notification",uri!~"/actuator.*"}[10m]))) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая latency p95"
+          description: "На сервисе {{ $labels.job }} p95 входящих HTTP-запросов превышает 1 секунду более 10 минут."
+
+  - name: my-bank-business
+    rules:
+      - alert: MyBankCashDepositFailures
+        expr: sum by (username) (increase(bank_cash_deposit_failures_total[10m])) > 2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Много неуспешных пополнений"
+          description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток пополнения за 10 минут."
+
+      - alert: MyBankCashWithdrawFailures
+        expr: sum by (username) (increase(bank_cash_withdraw_failures_total[10m])) > 2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Много неуспешных снятий"
+          description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток снятия за 10 минут."
+
+      - alert: MyBankTransferFailures
+        expr: (
+                clamp_min(
+                  sum by (username_from, username_to) (bank_transfer_failures_total)
+                  -
+                  sum by (username_from, username_to) (bank_transfer_failures_total offset 10m),
+                  0
+                )
+                or
+                sum by (username_from, username_to) (bank_transfer_failures_total)
+              ) > 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Неуспешные переводы"
+          description: "Пара {{ $labels.username_from }} -> {{ $labels.username_to }} имеет больше 1 неуспешной попытки перевода за 10 минут."

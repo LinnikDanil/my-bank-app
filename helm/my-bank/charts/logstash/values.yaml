@@ -1,0 +1,43 @@
+app:
+  nameOverride: logstash
+
+  replicaCount: 1
+
+  image:
+    repository: my-bank-logstash
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+
+  env:
+    LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+
+  service:
+    ports:
+      beats: 5044
+      api: 9600
+
+  config: |
+    http.host: 0.0.0.0
+    xpack.monitoring.enabled: false
+    pipeline.ordered: auto
+
+  pipeline: |
+    input {
+      tcp {
+        port => 5044
+        codec => json_lines
+      }
+    }
+    output {
+      stdout {
+        codec => rubydebug
+      }
+    }
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi

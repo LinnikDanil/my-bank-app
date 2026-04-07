@@ -1,5 +1,7 @@
 global:
   imagePullPolicy: IfNotPresent
+  security:
+    allowInsecureImages: true
 
 front:
   app:
@@ -7,12 +9,19 @@ front:
     replicaCount: 1
     image:
       repository: front-app
-      tag: 1.2.0
+      tag: 1.3.8
       pullPolicy: IfNotPresent
     service:
       port: 8086
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8086"
     env:
       SERVER_PORT: "8086"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5044"
       FRONT_CLIENT_ID: front
       FRONT_AUTHORIZATION_URI: http://localhost/realms/my-bank-realm/protocol/openid-connect/auth
       FRONT_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
@@ -21,6 +30,50 @@ front:
       FRONT_ACCOUNT_BASE_URL: http://account:8082
       FRONT_CASH_BASE_URL: http://cash:8083
       FRONT_TRANSFER_BASE_URL: http://transfer:8084
+    waitForDependencies:
+      enabled: true
+      checks:
+        - name: keycloak
+          host: keycloak
+          port: 80
+        - name: logstash
+          host: logstash
+          port: 5044
+        - name: account
+          host: account
+          port: 8082
+        - name: cash
+          host: cash
+          port: 8083
+        - name: transfer
+          host: transfer
+          port: 8084
+    probes:
+      startup:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        timeoutSeconds: 5
+        failureThreshold: 90
+      readiness:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 12
+      liveness:
+        enabled: true
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+    resources:
+      requests:
+        cpu: 200m
+        memory: 768Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
 account:
   app:
@@ -28,12 +81,19 @@ account:
     replicaCount: 1
     image:
       repository: account-app
-      tag: 1.2.0
+      tag: 1.3.8
       pullPolicy: IfNotPresent
     service:
       port: 8082
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8082"
     env:
       SERVER_PORT: "8082"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5044"
       DATASOURCE_SCHEMA_NAME: bank_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=bank_app
       SPRING_DATASOURCE_USERNAME: postgres
@@ -52,6 +112,47 @@ account:
       RESILIENCE4J_NOTIFICATION_RETRY_WAIT_DURATION: 300ms
       ACCOUNT_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       ACCOUNT_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    waitForDependencies:
+      enabled: true
+      checks:
+        - name: postgresql
+          host: postgresql
+          port: 5432
+        - name: kafka
+          host: kafka-broker
+          port: 9092
+        - name: keycloak
+          host: keycloak
+          port: 80
+        - name: logstash
+          host: logstash
+          port: 5044
+    probes:
+      startup:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        timeoutSeconds: 5
+        failureThreshold: 90
+      readiness:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 12
+      liveness:
+        enabled: true
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+    resources:
+      requests:
+        cpu: 200m
+        memory: 768Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
 cash:
   app:
@@ -59,12 +160,19 @@ cash:
     replicaCount: 1
     image:
       repository: cash-app
-      tag: 1.2.0
+      tag: 1.3.8
       pullPolicy: IfNotPresent
     service:
       port: 8083
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8083"
     env:
       SERVER_PORT: "8083"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5044"
       ACCOUNT_BASE_URL: http://account:8082
       KAFKA_BOOTSTRAP_SERVERS: kafka-broker-0.kafka-headless:9092
       NOTIFICATION_TOPIC: notification-events
@@ -92,6 +200,44 @@ cash:
       CASH_CLIENT_ID: cash-service
       CASH_OAUTH2_TOKEN_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/token
       CASH_OUTBOUND_OAUTH2_REGISTRATION_ID: cash-service-client
+    waitForDependencies:
+      enabled: true
+      checks:
+        - name: account
+          host: account
+          port: 8082
+        - name: keycloak
+          host: keycloak
+          port: 80
+        - name: logstash
+          host: logstash
+          port: 5044
+    probes:
+      startup:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        timeoutSeconds: 5
+        failureThreshold: 90
+      readiness:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 12
+      liveness:
+        enabled: true
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 750m
+        memory: 640Mi
 
 transfer:
   app:
@@ -99,12 +245,19 @@ transfer:
     replicaCount: 1
     image:
       repository: transfer-app
-      tag: 1.2.0
+      tag: 1.3.8
       pullPolicy: IfNotPresent
     service:
       port: 8084
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8084"
     env:
       SERVER_PORT: "8084"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5044"
       DATASOURCE_SCHEMA_NAME: transfer_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=transfer_app
       SPRING_DATASOURCE_USERNAME: postgres
@@ -138,6 +291,50 @@ transfer:
       TRANSFER_OUTBOX_POLL_DELAY_MS: "2000"
       TRANSFER_OUTBOX_RETRY_DELAY_MS: "5000"
       TRANSFER_OUTBOX_MAX_ATTEMPTS: "10"
+    waitForDependencies:
+      enabled: true
+      checks:
+        - name: postgresql
+          host: postgresql
+          port: 5432
+        - name: kafka
+          host: kafka-broker
+          port: 9092
+        - name: keycloak
+          host: keycloak
+          port: 80
+        - name: logstash
+          host: logstash
+          port: 5044
+        - name: account
+          host: account
+          port: 8082
+    probes:
+      startup:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        timeoutSeconds: 5
+        failureThreshold: 90
+      readiness:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 12
+      liveness:
+        enabled: true
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 750m
+        memory: 640Mi
 
 notification:
   app:
@@ -145,13 +342,20 @@ notification:
     replicaCount: 1
     image:
       repository: notification-app
-      tag: 1.2.0
+      tag: 1.3.8
       pullPolicy: IfNotPresent
     service:
-      enabled: false
+      enabled: true
       port: 8085
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8085"
     env:
       SERVER_PORT: "8085"
+      ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5044"
       DATASOURCE_SCHEMA_NAME: notification_app
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/bank?currentSchema=notification_app
       SPRING_DATASOURCE_USERNAME: postgres
@@ -163,13 +367,47 @@ notification:
       KAFKA_LISTENER_ACK_MODE: manual_immediate
       NOTIFICATION_JWT_ISSUER_URI: http://localhost/realms/my-bank-realm
       NOTIFICATION_JWT_JWK_SET_URI: http://keycloak/realms/my-bank-realm/protocol/openid-connect/certs
+    waitForDependencies:
+      enabled: true
+      checks:
+        - name: postgresql
+          host: postgresql
+          port: 5432
+        - name: kafka
+          host: kafka-broker
+          port: 9092
+        - name: keycloak
+          host: keycloak
+          port: 80
+        - name: logstash
+          host: logstash
+          port: 5044
     probes:
       startup:
-        enabled: false
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        timeoutSeconds: 5
+        failureThreshold: 90
       readiness:
-        enabled: false
+        enabled: true
+        initialDelaySeconds: 60
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 12
       liveness:
-        enabled: false
+        enabled: true
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 750m
+        memory: 640Mi
 
 ingress:
   enabled: true
@@ -234,16 +472,16 @@ keycloak:
     database: bank
   resources:
     requests:
-      cpu: 250m
-      memory: 512Mi
+      cpu: 200m
+      memory: 768Mi
     limits:
       cpu: 1000m
-      memory: 768Mi
+      memory: 1Gi
   httpRelativePath: /
   extraStartupArgs: "--import-realm"
   extraEnvVars:
     - name: JAVA_OPTS_KC_HEAP
-      value: "-Xms128m -Xmx512m"
+      value: "-Xms256m -Xmx768m"
     - name: KC_HOSTNAME
       value: localhost
     - name: KC_HOSTNAME_STRICT
@@ -270,10 +508,10 @@ keycloak:
     failureThreshold: 60
   readinessProbe:
     enabled: true
-    initialDelaySeconds: 90
+    initialDelaySeconds: 120
     periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
+    timeoutSeconds: 10
+    failureThreshold: 12
   livenessProbe:
     enabled: true
     initialDelaySeconds: 180
@@ -290,15 +528,20 @@ kafka:
   broker:
     replicaCount: 1
     heapOpts: "-Xms256m -Xmx512m"
+    readinessProbe:
+      initialDelaySeconds: 45
+      periodSeconds: 20
+      timeoutSeconds: 15
+      failureThreshold: 6
     config:
       num.partitions: "3"
     resources:
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 150m
+        memory: 384Mi
       limits:
-        cpu: 1000m
-        memory: 768Mi
+        cpu: 750m
+        memory: 512Mi
     persistence:
       enabled: true
       size: 2Gi
@@ -312,3 +555,362 @@ kafkaTopic:
       repository: kafkace/kafka
       tag: v3.7.1-63ba8d2
       pullPolicy: IfNotPresent
+
+zipkin:
+  fullnameOverride: zipkin
+  replicaCount: 1
+  zipkin:
+    storage:
+      type: mem
+  ingress:
+    enabled: true
+    className: nginx
+    host: zipkin.localhost
+    path: /
+  resources:
+    requests:
+      cpu: 150m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+prometheus:
+  alertmanager:
+    enabled: true
+    persistentVolume:
+      enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: my-bank-http
+          rules:
+            - alert: MyBankServiceDown
+              expr: |
+                (
+                  up{job=~"front|account|cash|transfer|notification"} == 0
+                )
+                or
+                (
+                  up{job="kubernetes-service-endpoints",service=~"front|account|cash|transfer|notification"} == 0
+                )
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Сервис my-bank недоступен"
+                description: "Prometheus не может получить метрики с одного из сервисов my-bank более 2 минут."
+            - alert: MyBankHighHttp5xxRate
+              expr: |
+                sum by (svc) (
+                  label_replace(rate(http_server_requests_seconds_count{service=~"front|account|cash|transfer|notification",status=~"5..",uri!~"/actuator.*"}[5m]), "svc", "$1", "service", "(.*)")
+                  or
+                  label_replace(rate(http_server_requests_seconds_count{job=~"front|account|cash|transfer|notification",status=~"5..",uri!~"/actuator.*"}[5m]), "svc", "$1", "job", "(.*)")
+                ) > 0.05
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Повышенный уровень 5xx"
+                description: "На сервисе {{ $labels.svc }} уровень 5xx превышает порог 0.05 RPS в течение 5 минут."
+            - alert: MyBankHighHttpP95Latency
+              expr: |
+                histogram_quantile(
+                  0.95,
+                  sum by (le, svc) (
+                    label_replace(rate(http_server_requests_seconds_bucket{service=~"front|account|cash|transfer|notification",uri!~"/actuator.*"}[10m]), "svc", "$1", "service", "(.*)")
+                    or
+                    label_replace(rate(http_server_requests_seconds_bucket{job=~"front|account|cash|transfer|notification",uri!~"/actuator.*"}[10m]), "svc", "$1", "job", "(.*)")
+                  )
+                ) > 1
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Высокая latency p95"
+                description: "На сервисе {{ $labels.svc }} p95 входящих HTTP-запросов превышает 1 секунду более 10 минут."
+        - name: my-bank-business
+          rules:
+            - alert: MyBankCashDepositFailures
+              expr: sum by (username) (increase(bank_cash_deposit_failures_total[10m])) > 2
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Много неуспешных пополнений"
+                description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток пополнения за 10 минут."
+            - alert: MyBankCashWithdrawFailures
+              expr: sum by (username) (increase(bank_cash_withdraw_failures_total[10m])) > 2
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Много неуспешных снятий"
+                description: "У пользователя {{ $labels.username }} больше 2 неуспешных попыток снятия за 10 минут."
+            - alert: MyBankTransferFailures
+              expr: |
+                (
+                  clamp_min(
+                    sum by (username_from, username_to) (bank_transfer_failures_total)
+                    -
+                    sum by (username_from, username_to) (bank_transfer_failures_total offset 10m),
+                    0
+                  )
+                  or
+                  sum by (username_from, username_to) (bank_transfer_failures_total)
+                ) > 1
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Неуспешные переводы"
+                description: "Пара {{ $labels.username_from }} -> {{ $labels.username_to }} имеет больше 1 неуспешной попытки перевода за 10 минут."
+  server:
+    persistentVolume:
+      enabled: false
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - prometheus.localhost
+      path: /
+      pathType: Prefix
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+grafana:
+  fullnameOverride: grafana
+  persistence:
+    enabled: false
+  adminUser: admin
+  adminPassword: admin
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          uid: prometheus
+          type: prometheus
+          access: proxy
+          url: http://my-bank-prometheus-server
+          isDefault: true
+          editable: false
+  sidecar:
+    dashboards:
+      enabled: true
+      provider:
+        folder: My Bank
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.localhost
+    path: /
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+elasticsearch:
+  fullnameOverride: elasticsearch
+  image:
+    repository: bitnamilegacy/elasticsearch
+    tag: 8.12.2-debian-12-r0
+  sysctlImage:
+    enabled: false
+  security:
+    enabled: false
+  master:
+    masterOnly: false
+    replicaCount: 1
+    heapSize: 256m
+    persistence:
+      enabled: true
+      size: 2Gi
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 180
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 12
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 300
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 10
+    resources:
+      requests:
+        cpu: 200m
+        memory: 768Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+  data:
+    replicaCount: 0
+  coordinating:
+    replicaCount: 0
+  ingest:
+    replicaCount: 0
+
+logstash:
+  app:
+    replicaCount: 1
+    image:
+      repository: my-bank-logstash
+      tag: 1.0.0
+      pullPolicy: IfNotPresent
+    env:
+      LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+    service:
+      ports:
+        beats: 5044
+        api: 9600
+    pipeline: |
+      input {
+        tcp {
+          port => 5044
+          codec => json_lines
+        }
+      }
+      filter {
+        if [timestamp] {
+          date {
+            match => ["timestamp", "ISO8601"]
+            target => "@timestamp"
+          }
+        }
+
+        mutate {
+          add_field => {
+            "[event][dataset]" => "bank.application"
+          }
+        }
+
+        if [message] {
+          mutate {
+            gsub => [
+              "message", "(?i)(password=)([^\\s,;]+)", "\\1***",
+              "message", "(?i)(token=)([^\\s,;]+)", "\\1***",
+              "message", "(?i)(bearer\\s+)([^\\s,;]+)", "\\1***"
+            ]
+          }
+        }
+
+        if [exception] {
+          mutate {
+            gsub => [
+              "exception", "(?i)(password=)([^\\s,;]+)", "\\1***",
+              "exception", "(?i)(token=)([^\\s,;]+)", "\\1***",
+              "exception", "(?i)(bearer\\s+)([^\\s,;]+)", "\\1***"
+            ]
+          }
+        }
+      }
+      output {
+        elasticsearch {
+          hosts => ["http://elasticsearch:9200"]
+          index => "bank-logs-%{+YYYY.MM.dd}"
+        }
+        stdout {
+          codec => rubydebug
+        }
+      }
+    config: |
+      http.host: 0.0.0.0
+      xpack.monitoring.enabled: false
+      pipeline.ordered: auto
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+
+kibana:
+  fullnameOverride: kibana
+  replicaCount: 1
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/kibana
+    tag: 8.12.2-debian-12-r0
+  savedObjects:
+    configmap: '{{ .Release.Name }}-kibana-saved-objects'
+    overwrite: true
+  extraConfiguration:
+    server.defaultRoute: /app/discover
+  persistence:
+    enabled: false
+  elasticsearch:
+    hosts:
+      - elasticsearch
+    port: 9200
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: kibana.localhost
+    path: /
+    pathType: Prefix
+  resources:
+    requests:
+      cpu: 200m
+      memory: 768Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 240
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 10
+  initContainers:
+    - name: wait-for-elasticsearch
+      image: docker.io/bitnamilegacy/kibana:8.12.2-debian-12-r0
+      imagePullPolicy: IfNotPresent
+      command:
+        - /bin/bash
+        - -ec
+        - |
+          for attempt in $(seq 1 120); do
+            if timeout 5 bash -c "cat < /dev/null > /dev/tcp/elasticsearch/9200"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1

@@ -1,6 +1,7 @@
 package ru.practicum.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.tracing.Tracer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -15,7 +16,7 @@ public class CommonWebLoggingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ControllerLoggingInterceptor controllerLoggingInterceptor(ObjectMapper objectMapper) {
-        return new ControllerLoggingInterceptor(objectMapper);
+    public ControllerLoggingInterceptor controllerLoggingInterceptor(ObjectMapper objectMapper, Tracer tracer) {
+        return new ControllerLoggingInterceptor(objectMapper, tracer);
     }
 }

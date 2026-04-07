@@ -2,6 +2,7 @@ package ru.practicum.cash.integration.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -23,6 +24,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import ru.practicum.common.config.CommonJacksonAutoConfiguration;
 import ru.practicum.cash.integration.notification.service.impl.CashNotificationServiceImpl;
 import ru.practicum.common.notification.NotificationEvent;
+import ru.practicum.common.tracing.TraceContextSupport;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -63,7 +65,13 @@ class CashNotificationKafkaProducerIT {
         ).createConsumer()) {
             consumerForTest.subscribe(List.of(TOPIC));
 
-            producer.notifyCashDeposit("ivanivanov", new BigDecimal("50.00"));
+            ThreadContext.put(TraceContextSupport.TRACE_ID, "fedcba9876543210fedcba9876543210");
+            ThreadContext.put(TraceContextSupport.SPAN_ID, "fedcba9876543210");
+            try {
+                producer.notifyCashDeposit("ivanivanov", new BigDecimal("50.00"));
+            } finally {
+                ThreadContext.clearAll();
+            }
 
             ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumerForTest, TOPIC, Duration.ofSeconds(5));
             NotificationEvent event = objectMapper.readValue(record.value(), NotificationEvent.class);
@@ -71,6 +79,12 @@ class CashNotificationKafkaProducerIT {
             assertThat(event.getEventType().name()).isEqualTo("CASH_DEPOSIT");
             assertThat(event.getPayload().getUsername()).isEqualTo("ivanivanov");
             assertThat(event.getPayload().getAmount()).isEqualByComparingTo("50.00");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACE_ID).value()))
+                    .isEqualTo("fedcba9876543210fedcba9876543210");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.SPAN_ID).value()))
+                    .isEqualTo("fedcba9876543210");
+            assertThat(new String(record.headers().lastHeader(TraceContextSupport.TRACEPARENT).value()))
+                    .isEqualTo("00-fedcba9876543210fedcba9876543210-fedcba9876543210-01");
         }
     }
 

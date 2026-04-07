@@ -8,3 +8,4 @@ FRONT_AUTHORIZATION_URI: http://localhost:8080/realms/my-bank-realm/protocol/ope
 FRONT_TOKEN_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/token
 FRONT_USER_INFO_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/userinfo
 FRONT_JWK_SET_URI: http://localhost:8080/realms/my-bank-realm/protocol/openid-connect/certs
+ZIPKIN_TRACING_ENDPOINT: http://localhost:9411/api/v2/spans

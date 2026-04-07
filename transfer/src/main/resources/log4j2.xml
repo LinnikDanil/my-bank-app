@@ -1,14 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" monitorInterval="10">
+    <Properties>
+        <Property name="serviceName">transfer</Property>
+        <Property name="logstashHost">${env:LOGSTASH_HOST:-logstash}</Property>
+        <Property name="logstashPort">${env:LOGSTASH_PORT:-5044}</Property>
+        <Property name="consolePattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c{1.} traceId=%X{traceId} spanId=%X{spanId} - %msg%n%notEmpty{%xEx}</Property>
+        <Property name="jsonPattern">{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}","service":"${serviceName}","level":"%p","thread":"%t","logger":"%c{1.}","traceId":"%X{traceId}","spanId":"%X{spanId}","message":"%enc{%m}{JSON}","exception":"%notEmpty{%enc{%xEx}{JSON}}" }%n</Property>
+    </Properties>
+
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout disableAnsi="false" charset="UTF-8"
-                           pattern="%d{dd-MM-yyy HH:mm:ss} %clr{[%t]}{cyan} %clr{%-5level} %logger{36} - %msg%n"/>
+            <PatternLayout charset="UTF-8" pattern="${consolePattern}"/>
         </Console>
+
+        <Socket name="Logstash"
+                host="${logstashHost}"
+                port="${logstashPort}"
+                protocol="TCP"
+                connectTimeoutMillis="2000"
+                reconnectDelayMillis="5000"
+                immediateFail="false"
+                ignoreExceptions="true">
+            <PatternLayout charset="UTF-8" pattern="${jsonPattern}"/>
+        </Socket>
     </Appenders>
+
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="Logstash"/>
         </Root>
     </Loggers>
 </Configuration>

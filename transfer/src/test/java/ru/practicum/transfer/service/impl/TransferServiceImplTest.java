@@ -1,5 +1,7 @@
 package ru.practicum.transfer.service.impl;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,8 +43,21 @@ class TransferServiceImplTest {
     @Mock
     private TransferPersistenceService transferPersistenceService;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter failureCounter;
+
     @InjectMocks
     private TransferServiceImpl transferService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        org.mockito.Mockito.lenient()
+                .when(meterRegistry.counter(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(failureCounter);
+    }
 
     @Nested
     @DisplayName("transfer")

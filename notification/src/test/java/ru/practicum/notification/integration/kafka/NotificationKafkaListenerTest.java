@@ -2,6 +2,7 @@ package ru.practicum.notification.integration.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.ThreadContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import ru.practicum.common.notification.NotificationEvent;
 import ru.practicum.common.notification.NotificationEventPayload;
 import ru.practicum.common.notification.NotificationEventType;
+import ru.practicum.common.tracing.TraceContextSupport;
 import ru.practicum.notification.service.NotificationService;
 
 import java.time.OffsetDateTime;
@@ -74,6 +76,26 @@ class NotificationKafkaListenerTest {
         assertThatThrownBy(() -> listener.onMessage(record, acknowledgment))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("boom");
+    }
+
+    @Test
+    @DisplayName("fills and clears mdc from kafka headers")
+    void fillsAndClearsMdcFromKafkaHeaders() {
+        NotificationKafkaListener listener = new NotificationKafkaListener(notificationService, objectMapper);
+        var record = new org.apache.kafka.clients.consumer.ConsumerRecord<>(
+                "notification-events", 0, 0L, "k1", buildEventJson()
+        );
+        record.headers().add(TraceContextSupport.TRACE_ID, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".getBytes());
+        record.headers().add(TraceContextSupport.SPAN_ID, "bbbbbbbbbbbbbbbb".getBytes());
+        record.headers().add(TraceContextSupport.TRACEPARENT,
+                "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01".getBytes());
+
+        listener.onMessage(record, acknowledgment);
+
+        verify(notificationService).processEvent(any(NotificationEvent.class));
+        verify(acknowledgment).acknowledge();
+        org.assertj.core.api.Assertions.assertThat(ThreadContext.get(TraceContextSupport.TRACE_ID)).isNull();
+        org.assertj.core.api.Assertions.assertThat(ThreadContext.get(TraceContextSupport.SPAN_ID)).isNull();
     }
 
     private String buildEventJson() {

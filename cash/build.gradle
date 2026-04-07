@@ -1,6 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
-version = '1.2.0'
+version = '1.3.8'
 description = 'cash'
 
 springBoot {
@@ -9,10 +9,10 @@ springBoot {
 
 dependencies {
     implementation project(':common')
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.springframework.boot:spring-boot-starter-kafka'
-    implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
+    implementation libs.spring.boot.starter.oauth2.resource.server
+    implementation libs.spring.boot.starter.oauth2.client
+    implementation libs.spring.boot.starter.kafka
+    implementation libs.resilience4j.spring.boot4
 }
 
 def cashServerOut = layout.buildDirectory.dir("generated/cash-server")

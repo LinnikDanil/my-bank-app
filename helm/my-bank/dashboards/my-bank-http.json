@@ -1,0 +1,249 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP Requests by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",status=~\"4..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",status=~\"4..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "4xx {{svc}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (svc) (label_replace(http_server_requests_seconds_count{service=~\"front|account|cash|transfer|notification\",status=~\"5..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_count{job=~\"front|account|cash|transfer|notification\",status=~\"5..\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "5xx {{svc}}",
+          "refId": "B"
+        }
+      ],
+      "title": "HTTP 4xx / 5xx Totals by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p50 {{svc}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p95 {{svc}}",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, svc) (label_replace(http_server_requests_seconds_bucket{service=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_server_requests_seconds_bucket{job=~\"front|account|cash|transfer|notification\",uri!~\"/actuator.*\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p99 {{svc}}",
+          "refId": "C"
+        }
+      ],
+      "title": "HTTP Latency Percentiles",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, svc) (label_replace(http_client_requests_seconds_bucket{service=~\"front|cash|transfer\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(http_client_requests_seconds_bucket{job=~\"front|cash|transfer\"}, \"svc\", \"$1\", \"job\", \"(.*)\")))",
+          "legendFormat": "p95 {{svc}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Outbound HTTP Client Latency p95",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "my-bank",
+    "http"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "My Bank HTTP Overview",
+  "uid": "my-bank-http",
+  "version": 5,
+  "weekStart": ""
+}

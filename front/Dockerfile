@@ -4,25 +4,21 @@
 FROM gradle:9.3.1-jdk25 AS builder
 WORKDIR /app
 
-# Копируем Gradle wrapper и build-файлы всех модулей, чтобы Docker мог закешировать зависимости
+# Копируем Gradle wrapper и build-файлы root/front/common, чтобы front мог собрать зависимость project(':common')
 COPY gradle gradle
 COPY gradlew build.gradle settings.gradle ./
-COPY common/build.gradle common/build.gradle
-COPY account/build.gradle account/build.gradle
-COPY cash/build.gradle cash/build.gradle
+RUN mkdir -p common account cash front notification transfer
 COPY front/build.gradle front/build.gradle
-COPY notification/build.gradle notification/build.gradle
-COPY transfer/build.gradle transfer/build.gradle
+COPY common/build.gradle common/build.gradle
 
-# Прогреваем зависимости без Gradle daemon, чтобы в builder-слое не оставался фоновый процесс
-RUN gradle :front:dependencies --no-daemon
-
-# Копируем исходники и OpenAPI-спецификации, нужные для генерации клиентов front
+# Копируем исходники common/front и OpenAPI-спецификации, нужные для генерации клиентов front
+COPY common/src common/src
 COPY front/src front/src
 COPY openapi openapi
 
-# Собираем исполняемый Spring Boot JAR автономно, без участия хост-машины
-RUN gradle :front:bootJar --no-daemon
+# Собираем исполняемый Spring Boot JAR через Gradle daemon и останавливаем его в конце builder-слоя
+RUN gradle :front:bootJar --daemon && \
+    gradle --stop
 
 # ─────────────────────────────────────────────────────────────
 # ЭТАП 2: Запуск сервиса front в легковесном JRE-образе
@@ -44,6 +40,6 @@ EXPOSE 8086
 USER appuser
 
 # JVM-оптимизации для контейнеров
-ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

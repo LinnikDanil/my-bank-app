@@ -1,105 +1,261 @@
 # My Bank App
 
-Микросервисное приложение «Банк» для проектной работы 11 спринта.
+Микросервисное приложение «Банк» для проектной работы 12 спринта.
 
-Проект реализует:
-- фронт с одной HTML-страницей (`front`),
-- сервис аккаунтов (`account`),
-- сервис внесения/снятия средств (`cash`),
-- сервис переводов (`transfer`),
-- сервис уведомлений (`notification`),
-- OAuth 2.0 авторизацию через Keycloak,
-- Service Discovery через Kubernetes Service DNS,
-- конфигурацию через Kubernetes ConfigMap/Secret,
-- взаимодействие сервисов уведомлений через Apache Kafka,
-- развёртывание через Helm (umbrella chart + сабчарты).
+Проект включает:
+- `front` с HTML UI и OAuth2 Login через Keycloak;
+- `account`, `cash`, `transfer`, `notification` как отдельные Spring Boot микросервисы;
+- Kafka для событий уведомлений;
+- PostgreSQL для хранения данных;
+- observability-стек: Zipkin, Prometheus, Grafana, Elasticsearch, Logstash, Kibana;
+- развёртывание в Kubernetes через umbrella Helm chart.
 
-## 1. Архитектура
+## Архитектура
 
-### 1.1. Сервисы
+### Сервисы
 
 | Модуль | Назначение | Порт |
 |---|---|---:|
-| `front` | UI (Thymeleaf), OAuth2 Login (Authorization Code Flow) | `8086` |
+| `front` | UI, OAuth2 Authorization Code Flow | `8086` |
 | `account` | Данные аккаунта, баланс, список получателей | `8082` |
-| `cash` | Пополнение/снятие со счёта | `8083` |
+| `cash` | Пополнение и снятие средств | `8083` |
 | `transfer` | Переводы между пользователями | `8084` |
-| `notification` | Обработка событий уведомлений из Kafka | `8085` |
+| `notification` | Обработка Kafka-событий уведомлений | `8085` |
+| `keycloak` | OAuth2 / OIDC сервер авторизации | `80` |
+| `postgresql` | База данных | `5432` |
 | `kafka` | Брокер сообщений | `9092` |
-| `keycloak` | OAuth 2.0 / OIDC сервер авторизации | `80` (svc), `8080` (container) |
-| `postgresql` | Персистентная БД аккаунтов/Keycloak | `5432` |
-| `ingress-nginx` | Внешний вход в приложение (Ingress) | `80/443` |
+| `zipkin` | Распределённый трейсинг | `9411` |
+| `prometheus` | Сбор метрик и alert rules | `80` |
+| `alertmanager` | Обработка alert-событий Prometheus | `9093` |
+| `grafana` | Дашборды метрик | `80` |
+| `elasticsearch` | Хранилище логов | `9200` |
+| `logstash` | Приём и обработка логов | `5044` / `9600` |
+| `kibana` | Поиск и анализ логов | `5601` |
 
-### 1.2. Схема взаимодействия
+### Схема взаимодействия
 
 ```mermaid
 flowchart LR
-  User[Пользователь] --> Ingress[Ingress]
-  Ingress --> Front[Front UI]
-  Ingress --> Keycloak[Keycloak]
+  User["Пользователь"] --> Ingress["Ingress"]
+  Ingress --> Front["Front UI"]
+  Ingress --> Keycloak["Keycloak"]
+  Ingress --> Zipkin["Zipkin"]
+  Ingress --> Prometheus["Prometheus"]
+  Ingress --> Grafana["Grafana"]
+  Ingress --> Kibana["Kibana"]
 
-  Front -->|JWT + REST| Account[Account]
-  Front -->|JWT + REST| Cash[Cash]
-  Front -->|JWT + REST| Transfer[Transfer]
+  Front -->|JWT + REST| Account["Account"]
+  Front -->|JWT + REST| Cash["Cash"]
+  Front -->|JWT + REST| Transfer["Transfer"]
 
   Cash -->|Client Credentials + REST| Account
   Transfer -->|Client Credentials + REST| Account
 
+  Account --> DB[(PostgreSQL)]
+  Transfer --> DB
+  Notification --> DB
+  Keycloak --> DB
+
   Account -->|Kafka event| Kafka[(Kafka)]
   Cash -->|Kafka event| Kafka
   Transfer -->|Kafka event| Kafka
-  Kafka -->|consume| Notification[Notification]
+  Kafka --> Notification
 
-  Account --> DB[(PostgreSQL)]
-  Notification --> DB
-  Keycloak --> DB
+  Front -->|traces| Zipkin
+  Account -->|traces, metrics, logs| Zipkin
+  Account -->|metrics| Prometheus
+  Account -->|logs| Logstash["Logstash"]
+  Cash -->|traces, metrics, logs| Zipkin
+  Cash -->|metrics| Prometheus
+  Cash -->|logs| Logstash
+  Transfer -->|traces, metrics, logs| Zipkin
+  Transfer -->|metrics| Prometheus
+  Transfer -->|logs| Logstash
+  Notification -->|traces, metrics, logs| Zipkin
+  Notification -->|metrics| Prometheus
+  Notification -->|logs| Logstash
+  Front -->|metrics, logs| Prometheus
+  Front -->|logs| Logstash
+
+  Logstash --> Elasticsearch["Elasticsearch"]
+  Prometheus --> Grafana
+  Elasticsearch --> Kibana
 ```
 
-## 2. Технологии
+## Технологии
 
-- Java 25, Spring Boot, Spring Security
-- OAuth2/OIDC (Keycloak)
+- Java 25
+- Spring Boot, Spring Security, Spring OAuth2 Client / Resource Server
+- Spring Data JPA, Hibernate, Liquibase
 - Spring Kafka
-- Spring Data JPA + Hibernate
-- Liquibase
+- Micrometer, Spring Boot Actuator
+- Micrometer Tracing + Zipkin
+- Prometheus + Grafana
+- Log4j2 + Logstash + Elasticsearch + Kibana
 - PostgreSQL
-- OpenAPI Generator
-- JUnit 5, Spring Boot Test, Testcontainers (в модуле `account`)
-- Docker, Docker Compose
-- Kubernetes
-- Helm
+- Docker, Kubernetes, Helm
 
-## 3. Требования и окружение
+## Observability
 
-### 3.1. Обязательные инструменты
+### Трейсинг
 
-- Docker Desktop (с включённым Kubernetes)
-- `kubectl`
-- `helm`
-- JDK 25
-- Bash/Zsh
+Во всех сервисах и во `front` настроен distributed tracing через Zipkin:
+- входящие HTTP-запросы;
+- исходящие HTTP-запросы;
+- Kafka producer / consumer observations;
+- обращения к БД через datasource observations.
 
-### 3.2. Версия Java
+Адрес:
+- Zipkin: [http://zipkin.localhost](http://zipkin.localhost)
 
-В `build.gradle` проекта настроен toolchain `Java 25`.
+Как пользоваться:
+- откройте `Zipkin`;
+- выберите нужный `serviceName` (`front`, `account`, `cash`, `transfer`, `notification`);
+- ищите трейсы по времени и длительности;
+- внутри трейса видно цепочку запросов между сервисами и дочерние спаны.
 
-## 4. Быстрый старт (Kubernetes + Helm)
+### Метрики
 
-### 4.1. Сборка Docker-образов
+Prometheus собирает метрики со всех приложений по `/actuator/prometheus`.
 
-JAR-файлы собираются внутри multi-stage Dockerfile, поэтому отдельный `bash ./gradlew clean build` на хост-машине не нужен.
+Адреса:
+- Prometheus: [http://prometheus.localhost](http://prometheus.localhost)
+- Grafana: [http://grafana.localhost](http://grafana.localhost)
+
+Учетные данные Grafana:
+- `admin / admin`
+
+Собираются:
+- HTTP-метрики: `RPS`, `4xx`, `5xx`, latency percentiles `p50/p95/p99`;
+- JVM-метрики: память, CPU, потоки, GC;
+- Spring Boot / process метрики;
+- бизнес-метрики:
+  - `bank_cash_deposit_failures_total` — неуспешные пополнения по `username`;
+  - `bank_cash_withdraw_failures_total` — неуспешные снятия по `username`;
+  - `bank_transfer_failures_total` — неуспешные переводы по `username_from` и `username_to`.
+
+Примечание: пункт про метрику и алерт по невозможности отправки уведомления сервисом `notification` не реализован осознанно, так как уведомления в текущей реализации записываются в логи, и отдельные ошибочные метрики/алерты для этого сценария не добавлялись.
+
+### Дашборды Grafana
+
+В Grafana автоматически провиженятся три дашборда в папке `My Bank`:
+
+1. `My Bank HTTP Overview`
+- входящий `RPS` по сервисам;
+- `4xx` / `5xx`;
+- `p50/p95/p99` latency входящих запросов;
+- `p95` latency исходящих HTTP-вызовов.
+
+2. `My Bank JVM Overview`
+- heap / non-heap memory;
+- `process_cpu_usage`;
+- live threads;
+- частота GC pause events.
+
+3. `My Bank Business Metrics`
+- неуспешные пополнения по пользователям;
+- неуспешные снятия по пользователям;
+- неуспешные переводы по отправителю и получателю.
+
+Как пользоваться:
+- откройте Grafana;
+- перейдите в `Dashboards -> My Bank`;
+- выберите один из дашбордов;
+- меняйте time range и изучайте панели по сервисам.
+
+### Алерты
+
+Алерты настроены в Prometheus через `alerting_rules.yml`.
+
+Сейчас есть правила:
+- `MyBankServiceDown` — сервис не отдаёт метрики;
+- `MyBankHighHttp5xxRate` — повышенный поток `5xx`;
+- `MyBankHighHttpP95Latency` — p95 входящих HTTP-запросов выше порога;
+- `MyBankCashDepositFailures` — всплеск неуспешных пополнений;
+- `MyBankCashWithdrawFailures` — всплеск неуспешных снятий;
+- `MyBankTransferFailures` — всплеск неуспешных переводов.
+
+Примечание: отдельный алерт по невозможности отправки уведомления сервисом `notification` не настраивался (уведомления логируются, без выделения отдельной error-метрики под алертинг).
+
+Как посмотреть:
+- откройте Prometheus;
+- перейдите в `Alerts`;
+- смотрите состояние правил (`inactive`, `pending`, `firing`).
+
+Адреса:
+- Kubernetes (через ingress): Prometheus — [http://prometheus.localhost](http://prometheus.localhost)
+- Docker Compose: Prometheus — [http://localhost:9090](http://localhost:9090), Alertmanager — [http://localhost:9093](http://localhost:9093)
+
+### Логи
+
+Логи всех приложений пишутся:
+- в консоль в человекочитаемом формате;
+- напрямую в Logstash по TCP в JSON-формате.
+
+В логах есть поля:
+- `service`
+- `level`
+- `traceId`
+- `spanId`
+- `message`
+- `exception`
+
+Logstash:
+- принимает JSON-логи;
+- нормализует `@timestamp`;
+- маскирует типовые чувствительные фрагменты (`password=...`, `token=...`, `Bearer ...`);
+- пишет документы в индексы `bank-logs-*` в Elasticsearch.
+
+Адрес:
+- Kibana: [http://kibana.localhost](http://kibana.localhost)
+
+Как пользоваться:
+- откройте Kibana;
+- перейдите в `Discover`;
+- data view `bank-logs-*` и сохранённый поиск `Bank Logs` импортируются автоматически при старте Kibana;
+- фильтруйте по `service`, `level`, `traceId`, `spanId`.
+
+Примеры KQL-запросов:
+
+```text
+service : "cash"
+```
+
+```text
+level : "ERROR"
+```
+
+```text
+traceId : "ВАШ_TRACE_ID"
+```
+
+## Требования
+
+Нужно установить:
+- Docker Desktop с включённым Kubernetes;
+- `kubectl`;
+- `helm`;
+- JDK 25;
+- Bash или Zsh.
+
+В проекте настроен Gradle toolchain `Java 25`.
+
+## Быстрый старт в Kubernetes
+
+### 1. Сборка Docker-образов
 
 Из корня проекта:
 
 ```bash
-docker build -f front/Dockerfile -t front-app:1.2.0 .
-docker build -f account/Dockerfile -t account-app:1.2.0 .
-docker build -f cash/Dockerfile -t cash-app:1.2.0 .
-docker build -f transfer/Dockerfile -t transfer-app:1.2.0 .
-docker build -f notification/Dockerfile -t notification-app:1.2.0 .
+docker build -f front/Dockerfile -t front-app:1.3.8 .
+docker build -f account/Dockerfile -t account-app:1.3.8 .
+docker build -f cash/Dockerfile -t cash-app:1.3.8 .
+docker build -f transfer/Dockerfile -t transfer-app:1.3.8 .
+docker build -f notification/Dockerfile -t notification-app:1.3.8 .
+docker build -f logstash/Dockerfile -t my-bank-logstash:1.0.0 .
 ```
 
-### 4.2. Установка ingress-nginx
+### 2. Установка ingress-nginx
 
 ```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -108,7 +264,7 @@ kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply 
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
-### 4.3. Деплой приложения
+### 3. Обновление зависимостей Helm
 
 ```bash
 helm repo add kafka-repo https://helm-charts.itboon.top/kafka
@@ -117,40 +273,58 @@ helm repo update
 for chart in front account cash transfer notification; do
   helm dependency update helm/my-bank/charts/$chart
 done
+
 helm dependency update helm/my-bank
+```
+
+### 4. Деплой приложения
+
+```bash
 helm upgrade --install my-bank helm/my-bank \
   -f helm/my-bank/values.yaml \
   -f helm/my-bank/values-secret.yaml
 ```
 
-### 4.4. Проверка статуса
+### 5. Проверка статуса
 
 ```bash
 kubectl get pods
 kubectl get svc
 kubectl get ingress
+helm status my-bank
+helm test my-bank
 ```
 
-Открыть:
-- Front UI: [http://localhost/](http://localhost/)
+### 6. Точки входа
 
-### 4.5. Остановка
+- Front UI: [http://localhost/](http://localhost/)
+- Zipkin: [http://zipkin.localhost](http://zipkin.localhost)
+- Prometheus: [http://prometheus.localhost](http://prometheus.localhost)
+- Grafana: [http://grafana.localhost](http://grafana.localhost)
+- Kibana: [http://kibana.localhost](http://kibana.localhost)
+
+### 7. Остановка
 
 ```bash
 helm uninstall my-bank
 ```
 
-## 5. Локальный запуск сервисов (legacy Docker Compose)
+## Локальный запуск без Kubernetes
 
-Вариант для локальной разработки без Kubernetes.
+Для локального запуска полного стенда (включая observability и alerting) можно использовать Docker Compose:
 
 ```bash
 docker compose up -d --build
 ```
 
-Открыть:
+Доступно:
 - Front UI: [http://localhost:8086](http://localhost:8086)
 - Keycloak: [http://localhost:8080](http://localhost:8080)
+- Zipkin: [http://localhost:9411](http://localhost:9411)
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Alertmanager: [http://localhost:9093](http://localhost:9093)
+- Grafana: [http://localhost:3000](http://localhost:3000)
+- Kibana: [http://localhost:5601](http://localhost:5601)
 
 Остановка:
 
@@ -158,78 +332,65 @@ docker compose up -d --build
 docker compose down
 ```
 
-С удалением volume БД:
+С удалением volume:
 
 ```bash
 docker compose down -v
 ```
 
-## 6. Учётные данные для тестирования
+Для Docker Compose и Kubernetes + Helm используются одинаковые метрики, дашборды и alert rules.
 
-### 6.1. Keycloak
+## Учётные данные
+
+### Keycloak
 
 - админ-консоль: `admin / admin`
 - realm: `my-bank-realm`
 
-### 6.2. Пользователи
+### Пользователи
 
-Из realm-импорта преднастроены:
 - `ivanivanov / ivan123`
 - `petrpetrov / petr123`
 
-### 6.3. Аккаунты в БД (Liquibase seed)
+### Grafana
 
-`account`-сервис заполняет таблицу `account` начальными данными:
-- `ivanivanov` (Ivan Ivanov)
-- `petrpetrov` (Petr Petrov)
-- `mariaivanova` (Мария Иванова)
-- `sergeysmirnov` (Сергей Смирнов)
-- `olgakuznetsova` (Ольга Кузнецова)
+- `admin / admin`
 
-## 7. Пользовательские сценарии
+## Пользовательские сценарии
 
-После входа в `front` доступны:
+После входа во `front` доступны:
+- просмотр текущего аккаунта;
+- изменение профиля;
+- пополнение счёта;
+- снятие средств;
+- перевод другому пользователю;
+- выход из сессии.
 
-1. Редактирование профиля
-- Изменение ФИО и даты рождения.
-- Бизнес-валидация возраста: 18+.
+## OpenAPI
 
-2. Операции со счётом
-- Пополнение.
-- Снятие (с проверкой на недостаточность средств).
-
-3. Переводы
-- Выбор получателя.
-- Перевод суммы другому пользователю.
-
-4. Выход
-- Кнопка выхода завершает локальную сессию и OIDC-сессию в Keycloak.
-
-## 8. API и OpenAPI
-
-OpenAPI-спецификации лежат в директории [`openapi`](./openapi):
+Спецификации лежат в [`openapi`](./openapi):
 - `account-public-openapi.yaml`
 - `account-internal-openapi.yaml`
 - `cash-openapi.yaml`
 - `transfer-openapi.yaml`
 
-Генерация серверных/клиентских интерфейсов выполняется в Gradle-задачах модулей и автоматически привязана к `compileJava`.
+Генерация серверных и клиентских интерфейсов привязана к `compileJava`.
 
-## 9. Тестирование
+## Тестирование
 
-### 9.1. Все модульные тесты
+### Unit и module tests
 
 ```bash
 bash ./gradlew test
 ```
 
-### 9.2. Интеграционные тесты (`*IT`)
+### Integration tests
 
 ```bash
 bash ./gradlew integrationTest
 ```
 
-### 9.3. Helm-тесты
+### Helm-проверки
 
 ```bash
 helm lint helm/my-bank -f helm/my-bank/values.yaml -f helm/my-bank/values-secret.yaml
@@ -237,54 +398,11 @@ helm template my-bank helm/my-bank -f helm/my-bank/values.yaml -f helm/my-bank/v
 helm test my-bank
 ```
 
-## 10. Docker-образы и упаковка
+## Полезные файлы
 
-Каждый сервис собирается в Executable JAR и упаковывается в отдельный Docker-образ (`Single Service per Host`):
-- `front/Dockerfile`
-- `account/Dockerfile`
-- `cash/Dockerfile`
-- `transfer/Dockerfile`
-- `notification/Dockerfile`
-
-Dockerfile сервисов выполнены в формате multi-stage build.
-
-## 11. Конфигурация и секреты
-
-### 11.1. Локальные переменные окружения (Docker Compose)
-
-Файл `.env`:
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `POSTGRES_DB`
-
-### 11.2. Kubernetes ConfigMap/Secret
-
-Настройки и секреты сервисов задаются в Helm:
 - [`helm/my-bank/values.yaml`](./helm/my-bank/values.yaml)
 - [`helm/my-bank/values-secret.yaml`](./helm/my-bank/values-secret.yaml)
-
-В кластере они рендерятся в `ConfigMap` и `Secret` каждого сабчарта.
-
-## 12. Kafka и DLQ
-
-- События уведомлений публикуются в Kafka-топик `notification-events`.
-- `notification` обрабатывает сообщения как Kafka consumer (стратегия `at least once`).
-- При ошибках обработки сообщения сохраняются в DLQ в БД (`notification_app.dead_letter_queue`).
-
-## 13. Структура проекта
-
-```text
-my-bank-app/
-├── account/
-├── cash/
-├── front/
-├── notification/
-├── transfer/
-├── openapi/
-├── helm/
-│   └── my-bank/
-├── docker/
-├── docker-compose.yml
-├── build.gradle
-└── settings.gradle
-```
+- [`helm/my-bank/templates/tests/smoke-test.yaml`](./helm/my-bank/templates/tests/smoke-test.yaml)
+- [`helm/my-bank/dashboards/my-bank-http.json`](./helm/my-bank/dashboards/my-bank-http.json)
+- [`helm/my-bank/dashboards/my-bank-jvm.json`](./helm/my-bank/dashboards/my-bank-jvm.json)
+- [`helm/my-bank/dashboards/my-bank-business.json`](./helm/my-bank/dashboards/my-bank-business.json)

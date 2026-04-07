@@ -1,5 +1,7 @@
 package ru.practicum.cash.service.impl;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,8 +34,14 @@ class CashServiceImplTest {
     @Mock
     private CashNotificationService cashNotificationService;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
     @InjectMocks
     private CashServiceImpl cashService;
+
+    @Mock
+    private Counter failureCounter;
 
     @Nested
     @DisplayName("deposit")
@@ -120,5 +128,10 @@ class CashServiceImplTest {
 
             verifyNoInteractions(cashAccountService, cashNotificationService);
         }
+    }
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        lenient().when(meterRegistry.counter(anyString(), anyString(), anyString())).thenReturn(failureCounter);
     }
 }

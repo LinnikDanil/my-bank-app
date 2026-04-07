@@ -1,0 +1,240 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (svc) (label_replace(jvm_memory_used_bytes{service=~\"front|account|cash|transfer|notification\",area=\"heap\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_memory_used_bytes{job=~\"front|account|cash|transfer|notification\",area=\"heap\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "heap {{svc}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (svc) (label_replace(jvm_memory_used_bytes{service=~\"front|account|cash|transfer|notification\",area=\"nonheap\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_memory_used_bytes{job=~\"front|account|cash|transfer|notification\",area=\"nonheap\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "non-heap {{svc}}",
+          "refId": "B"
+        }
+      ],
+      "title": "JVM Memory Used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "avg by (svc) (label_replace(process_cpu_usage{service=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(process_cpu_usage{job=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Process CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "max by (svc) (label_replace(jvm_threads_live_threads{service=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(jvm_threads_live_threads{job=~\"front|account|cash|transfer|notification\"}, \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Threads",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (svc) (label_replace(rate(jvm_gc_pause_seconds_count{service=~\"front|account|cash|transfer|notification\"}[$__rate_interval]), \"svc\", \"$1\", \"service\", \"(.*)\") or label_replace(rate(jvm_gc_pause_seconds_count{job=~\"front|account|cash|transfer|notification\"}[$__rate_interval]), \"svc\", \"$1\", \"job\", \"(.*)\"))",
+          "legendFormat": "{{svc}}",
+          "refId": "A"
+        }
+      ],
+      "title": "GC Pause Events Rate",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "my-bank",
+    "jvm"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "My Bank JVM Overview",
+  "uid": "my-bank-jvm",
+  "version": 4,
+  "weekStart": ""
+}

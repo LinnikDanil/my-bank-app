@@ -13,8 +13,8 @@ public class AccountClientConfig {
 
     @Bean
     public AccountInternalApi accountInternalApi(AccountIntegrationProperties properties,
-                                                 RestClient.Builder accountRestClientBuilder) {
-        ApiClient apiClient = new ApiClient(accountRestClientBuilder.build());
+                                                 RestClient accountRestClient) {
+        ApiClient apiClient = new ApiClient(accountRestClient);
         apiClient.setBasePath(properties.baseUrl());
         return new AccountInternalApi(apiClient);
     }

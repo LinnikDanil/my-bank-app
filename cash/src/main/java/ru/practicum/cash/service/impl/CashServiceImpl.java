@@ -1,8 +1,10 @@
 package ru.practicum.cash.service.impl;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.common.metrics.BusinessMetrics;
 import ru.practicum.cash.domain.CashOperationRequest;
 import ru.practicum.cash.domain.CashOperationResponse;
 import ru.practicum.cash.domain.exception.InvalidAmountException;
@@ -21,33 +23,50 @@ public class CashServiceImpl implements CashService {
 
     private final CashAccountService cashAccountService;
     private final CashNotificationService cashNotificationService;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public CashOperationResponse deposit(String username, CashOperationRequest request) {
-        validateUsername(username);
-        validateRequest(request);
+        try {
+            validateUsername(username);
+            validateRequest(request);
 
-        BigDecimal amount = request.getAmount();
-        log.info("Пополнение баланса: username={}, amount={}", username, amount);
-        var balanceResponse = cashAccountService.deposit(username, amount);
+            BigDecimal amount = request.getAmount();
+            log.info("Пополнение баланса: username={}, amount={}", username, amount);
+            var balanceResponse = cashAccountService.deposit(username, amount);
 
-        cashNotificationService.notifyCashDeposit(username, amount);
-        log.info("Пополнение выполнено: username={}, newBalance={}", username, balanceResponse.getBalance());
-        return new CashOperationResponse(username, amount, balanceResponse.getBalance());
+            cashNotificationService.notifyCashDeposit(username, amount);
+            log.info("Пополнение выполнено: username={}, newBalance={}", username, balanceResponse.getBalance());
+            return new CashOperationResponse(username, amount, balanceResponse.getBalance());
+        } catch (RuntimeException ex) {
+            meterRegistry.counter(
+                    BusinessMetrics.CASH_DEPOSIT_FAILURES,
+                    BusinessMetrics.USERNAME, username
+            ).increment();
+            throw ex;
+        }
     }
 
     @Override
     public CashOperationResponse withdraw(String username, CashOperationRequest request) {
-        validateUsername(username);
-        validateRequest(request);
+        try {
+            validateUsername(username);
+            validateRequest(request);
 
-        BigDecimal amount = request.getAmount();
-        log.info("Снятие средств: username={}, amount={}", username, amount);
-        var balanceResponse = cashAccountService.withdraw(username, amount);
+            BigDecimal amount = request.getAmount();
+            log.info("Снятие средств: username={}, amount={}", username, amount);
+            var balanceResponse = cashAccountService.withdraw(username, amount);
 
-        cashNotificationService.notifyCashWithdraw(username, amount);
-        log.info("Снятие выполнено: username={}, newBalance={}", username, balanceResponse.getBalance());
-        return new CashOperationResponse(username, amount, balanceResponse.getBalance());
+            cashNotificationService.notifyCashWithdraw(username, amount);
+            log.info("Снятие выполнено: username={}, newBalance={}", username, balanceResponse.getBalance());
+            return new CashOperationResponse(username, amount, balanceResponse.getBalance());
+        } catch (RuntimeException ex) {
+            meterRegistry.counter(
+                    BusinessMetrics.CASH_WITHDRAW_FAILURES,
+                    BusinessMetrics.USERNAME, username
+            ).increment();
+            throw ex;
+        }
     }
 
     private void validateUsername(String username) {
